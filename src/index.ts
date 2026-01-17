@@ -45,14 +45,14 @@ export function getProviderPlatform(providerId: string): Platform | null {
  * @returns Error message with setup instructions
  */
 export function createCredentialError(): string {
-  return `No credentials found. Please authenticate by running the /connect command in OpenCode.
+  return `No credentials found. Please authenticate by running /connect command in OpenCode.
 
 Supported providers:
 - Z.AI Coding Plan (recommended)
 - Z.AI
 - Zhipu
 
-For development/testing, you can also set environment variables for the appropriate platform.`
+For development/testing, you can also set environment variables for appropriate platform.`
 }
 
 /**
@@ -94,7 +94,7 @@ export async function getCredentials(authContext?: { providerId: string; token: 
 /**
  * Main GLM Quota Plugin
  */
-export const GlmQuotaPlugin: Plugin = async () => {
+export const GlmQuotaPlugin = async () => {
   return {
     tool: {
       glm_quota: tool({
@@ -113,5 +113,3 @@ export const GlmQuotaPlugin: Plugin = async () => {
     }
   }
 }
-
-export default GlmQuotaPlugin
