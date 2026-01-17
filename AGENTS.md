@@ -32,6 +32,69 @@ npm run lint
 npm run prepublishOnly
 ```
 
+## GitHub Actions CI/CD
+
+This project uses GitHub Actions for automated CI/CD.
+
+### CI Workflow (Automatic)
+
+**Triggers:**
+- Push to `main` branch
+- Pull requests to `main` branch
+
+**What It Does:**
+- Tests code on multiple Node.js versions (18.x, 20.x, 22.x)
+- Runs linting (`npm run lint`)
+- Builds TypeScript (`npm run build`)
+- Runs all tests (`npm test`)
+- Validates documentation links
+- Uploads test coverage artifacts
+
+**View Results:**
+- Check the "Actions" tab in GitHub repository
+- Green checkmark ✅ = All tests passed
+- Red X ❌ = Something failed (check logs)
+
+### Publish Workflow (On Release)
+
+**Triggers:**
+- GitHub release published
+
+**What It Does:**
+- Builds, tests, and lints code
+- Publishes package to npm with provenance
+- Creates release artifacts
+
+**Setup Required:**
+1. Create npm automation token at https://www.npmjs.com/settings/tokens
+2. Add `NPM_TOKEN` to GitHub repository secrets:
+   - Go to Settings → Secrets and variables → Actions
+   - Create secret: `NPM_TOKEN`
+   - Value: Your npm automation token
+
+**How to Publish:**
+```bash
+# Using GitHub CLI
+gh release create v1.0.0 --generate-notes
+
+# Or via GitHub web UI:
+# 1. Go to Releases → Create new release
+# 2. Enter version tag (e.g., v1.0.0)
+# 3. Add release notes
+# 4. Click "Publish release"
+```
+
+The workflow automatically publishes to npm when a release is created.
+
+### CI Status Badge
+
+The README includes a CI status badge that shows the current build status:
+```
+[![Build Status](https://github.com/guyinwonder168/opencode-glm-quota/workflows/Build%20&%20Test/badge.svg)]
+```
+
+This badge updates automatically with each commit.
+
 ## Project Structure
 
 ```
@@ -254,11 +317,26 @@ export default GlmQuotaPlugin
 - No token exposure in logs or errors
 
 ## Verification Before Completion
-Always run:
+
+**Local Testing:**
+Always run these before pushing:
 1. `npm run build` - Ensure TypeScript compiles without errors
 2. `npm run lint` - Check for linting issues
 3. `npm run test` - Verify all tests pass
 4. Manual test: `/glm_quota` command in OpenCode
+
+**CI/CD Verification:**
+After pushing, verify GitHub Actions workflow:
+5. Check CI workflow runs successfully in GitHub Actions tab
+6. Verify all Node.js versions (18, 20, 22) pass tests
+7. Confirm documentation validation passes
+
+**Before Publishing:**
+Before creating a GitHub release:
+8. All CI checks must pass
+9. Update version in package.json (if exists)
+10. Update CHANGELOG.md with changes
+11. Create GitHub release (workflow publishes to npm automatically)
 
 ## Common Pitfalls
 - ❌ Adding "Bearer " prefix to Authorization header
