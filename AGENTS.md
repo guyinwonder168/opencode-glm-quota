@@ -210,6 +210,105 @@ function formatDateTime(date: Date): string {
 async function getCredentials(): Promise<Credentials | null> { }
 ```
 
+### Development Principles
+
+**CRITICAL:** Implementation MUST follow these principles to avoid over-engineering and maintain simplicity.
+
+**YAGNI (You Aren't Gonna Need It):**
+- Build only what's needed NOW, not what you might need LATER
+- Don't create abstractions without multiple implementations
+- Don't optimize prematurely (measure first, then optimize)
+- Don't add features not in PRD
+
+**TypeScript Best Practices:**
+- Use `unknown` instead of `any` when possible
+- Prefer `type` over `interface` for simple shapes
+- Use `as const` for literal types to avoid widening
+- Use discriminated unions instead of optional properties where appropriate
+- Let TypeScript infer types when possible (don't over-annotate)
+
+**Avoid Over-Engineering:**
+- Don't create factory patterns when simple functions work
+- Don't build generic HTTP client when you only need one endpoint
+- Don't add validation libraries for simple type checks
+- Don't create config objects when constants work
+- Don't abstract every possible future use case
+
+**When to Build Abstractions:**
+- ✅ Multiple implementations exist (platform detection, auth methods)
+- ✅ Code is duplicated 3+ times
+- ✅ Tests reveal the abstraction is needed
+- ❌ "Might need this later" - NOT a valid reason
+- ❌ "More flexible" - Flexibility without actual need = complexity
+
+**Examples: What to AVOID:**
+
+```typescript
+// ❌ OVER-ENGINEERED: Generic HTTP client for 1 endpoint
+class HttpClient {
+  private baseURL: string;
+  private headers: Record<string, string>;
+  constructor(baseURL: string, headers: Record<string, string>) {
+    this.baseURL = baseURL;
+    this.headers = headers;
+  }
+  async get(path: string, params?: Record<string, string>) {
+    // 100 lines of generic implementation
+  }
+  async post(path: string, body: any) {
+    // Not needed for this project
+  }
+  async put() { /* Not needed */ }
+  async delete() { /* Not needed */ }
+}
+
+// ✅ SIMPLE: Just make the one request we need
+async function makeRequest(url: string, token: string): Promise<ApiResponse> {
+  const data = await httpsRequest(url, token);
+  return JSON.parse(data);
+}
+
+// ❌ OVER-ENGINEERED: Factory pattern for 1 function
+class EndpointFactory {
+  static create(type: 'quota' | 'model' | 'tool'): Endpoint {
+    switch(type) {
+      case 'quota': return new QuotaEndpoint();
+      case 'model': return new ModelEndpoint();
+      case 'tool': return new ToolEndpoint();
+    }
+  }
+}
+
+// ✅ SIMPLE: Just use the endpoints directly
+const ENDPOINTS = {
+  quota: '/api/monitor/usage/quota/limit',
+  model: '/api/monitor/usage/model-usage',
+  tool: '/api/monitor/usage/tool-usage'
+} as const;
+
+// ❌ OVER-ENGINEERED: Generic validation library
+function createValidator<T>(schema: Schema<T>) {
+  return (data: unknown): ValidationResult<T> => {
+    // 200 lines of generic validation logic
+  };
+}
+
+// ✅ SIMPLE: Type guards for what we actually need
+function isApiResponse(data: unknown): data is ApiResponse {
+  return typeof data === 'object' && 'TOKENS_LIMIT' in data;
+}
+```
+
+**Simple is Better Than Flexible:**
+- Simple code is easier to test
+- Simple code is easier to debug
+- Simple code is easier to maintain
+- Flexible without requirements = complex for no reason
+
+**Reference:**
+- Implementation plan: `docs/implementation-plan.md` - Follows TDD with vertical slicing
+- Code standards: `.opencode/context/core/standards/code.md` - Detailed principles above
+
 ### Plugin Architecture (OpenCode Plugin)
 
 **Export Structure:**
