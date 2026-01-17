@@ -7,8 +7,6 @@
 
 import { type Plugin } from '@opencode-ai/plugin'
 import { tool } from '@opencode-ai/plugin/tool'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { z } from 'zod'
 
 /**
  * Platform type supported by plugin
@@ -96,7 +94,6 @@ export async function getCredentials(authContext?: { providerId: string; token: 
 /**
  * Main GLM Quota Plugin
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const GlmQuotaPlugin: Plugin = async ({ client }) => {
   return {
     tool: {
