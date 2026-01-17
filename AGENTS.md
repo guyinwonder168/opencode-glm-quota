@@ -147,18 +147,17 @@ function formatDateTime(date: Date): string {
 async function getCredentials(): Promise<Credentials | null> { }
 ```
 
-### Plugin Architecture
-- Export a `Plugin` function that returns tool definitions
-- Use `tool()` helper for each tool
-- Provide clear descriptions for tool invocation
-- Handle errors gracefully with helpful user messages
+### Plugin Architecture (OpenCode Plugin)
 
+**Export Structure:**
 ```typescript
-export const GlmQuotaPlugin: Plugin = async (ctx) => {
+import { type Plugin, tool } from "@opencode-ai/plugin"
+
+export const GlmQuotaPlugin: Plugin = async ({ client }) => {
   return {
     tool: {
       glm_quota: tool({
-        description: 'Clear description of what this does',
+        description: 'Query Z.ai GLM Coding Plan usage statistics...',
         args: {},
         async execute(args, context) {
           // Implementation
@@ -167,13 +166,38 @@ export const GlmQuotaPlugin: Plugin = async (ctx) => {
     }
   }
 }
+
+export default GlmQuotaPlugin
 ```
+
+**Plugin Context Received:**
+- `client`: OpenCode SDK client for logging, app context
+- `project`: Current project information
+- `directory`: Working directory
+- `worktree`: Git worktree path
+- `$`: Shell commands
+
+**Key Differences from Standalone Scripts:**
+- ❌ No direct file I/O for auth.json
+- ❌ No manual authentication prompts
+- ❌ No environment variable parsing as primary method
+- ✅ Receive auth context from OpenCode automatically
+- ✅ Use `client.app.log()` for structured logging
+- ✅ Throw errors and let OpenCode display them
 
 ## Testing
 - Write tests in TypeScript with `.test.ts` extension
 - Use Node.js built-in test runner (`node --test`)
 - Mock file system and HTTP requests in tests
-- Test error paths (missing credentials, API failures)
+- Test error paths (missing credentials, API failures, timeout, parse errors)
+- **No retry logic tests** - Plugin uses fail-fast philosophy (user-requested)
+
+**Test Categories:**
+1. **Functional tests** - Pure functions (formatDateTime, getTimeWindow, processQuotaLimit, createProgressBar)
+2. **Module tests** - With mocks (getCredentials, platform mapping, makeRequest)
+3. **Integration tests** - End-to-end credential → API → output flow
+4. **Error handling tests** - Network, auth, API, parse errors (NO retry logic)
+5. **Security tests** - Token masking, file permission validation, error sanitization
 
 ## Platform Detection
 - **Provider ID determines platform**: OpenCode's authentication system provides provider ID (`zai-coding-plan`, `zai`, `zhipu`)
