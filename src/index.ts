@@ -94,7 +94,7 @@ export async function getCredentials(authContext?: { providerId: string; token: 
 /**
  * Main GLM Quota Plugin
  */
-export const GlmQuotaPlugin: Plugin = async ({ client }) => {
+export const GlmQuotaPlugin: Plugin = async () => {
   return {
     tool: {
       glm_quota: tool({
