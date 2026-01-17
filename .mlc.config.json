@@ -1,0 +1,25 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://github.com/guyinwonder168/opencode-glm-quota"
+    },
+    {
+      "pattern": "^https://www.npmjs.com/package/opencode-glm-quota"
+    },
+    {
+      "pattern": "^https://badge.fury.io/js/opencode-glm-quota"
+    }
+  ],
+  "ignoreDirs": [
+    ".git",
+    "node_modules",
+    "dist",
+    ".tmp"
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^/",
+      "replacement": "{{BASEURL}}/"
+    }
+  ]
+}
