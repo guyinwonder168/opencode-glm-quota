@@ -219,11 +219,13 @@ export default GlmQuotaPlugin
 2. `ZAI_API_KEY` - For Z.AI platform
 3. `ZHIPU_API_KEY` or `ZHIPUAI_API_KEY` - For ZHIPU platform
 
-**Important:** 
+**Important:**
 - Plugins do NOT read auth.json directly - they receive auth context from OpenCode
 - Plugins do NOT handle authentication prompts - OpenCode manages user authentication
 - Environment variables are intended for development and testing only
 - For production use, always authenticate via OpenCode's `/connect` command
+
+**Documentation:** See CHANGELOG.md for detailed change history and implementation decisions.
 
 ## Critical Implementation Details
 
