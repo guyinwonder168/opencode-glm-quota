@@ -1,0 +1,53 @@
+{
+  "name": "opencode-glm-quota",
+  "version": "1.0.0",
+  "description": "OpenCode plugin to query Z.ai GLM Coding Plan usage statistics including quota limits, model usage, and MCP tool usage",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "node --test",
+    "lint": "eslint src/"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "zai",
+    "z.ai",
+    "zhipu",
+    "glm",
+    "quota",
+    "usage",
+    "coding-plan",
+    "ai",
+    "llm"
+  ],
+  "author": "guyinwonder168 <guyinwonder168@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guyinwonder168/opencode-glm-quota.git"
+  },
+  "bugs": {
+    "url": "https://github.com/guyinwonder168/opencode-glm-quota/issues"
+  },
+  "homepage": "https://github.com/guyinwonder168/opencode-glm-quota#readme",
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "latest",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  }
+}

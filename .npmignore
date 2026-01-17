@@ -1,0 +1,40 @@
+# Source files (dist is published)
+src/
+tests/
+*.test.ts
+
+# Dependencies
+node_modules/
+
+# Documentation (already in repo)
+docs/
+AGENTS.md
+CHANGELOG.md
+CONTRIBUTING.md
+
+# CI/CD
+.github/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Test coverage
+coverage/
+
+# Temporary files
+.tmp/
+*.tmp
+*.temp
