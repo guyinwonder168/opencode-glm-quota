@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/guyinwonder168/opencode-glm-quota/workflows/Build%20&%20Test/badge.svg)](https://github.com/guyinwonder168/opencode-glm-quota/actions)
 
-OpenCode plugin to query Z.ai GLM Coding Plan usage statistics.
+OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time quota monitoring, model usage tracking, and MCP tool usage.
 
 ## Features
 
