@@ -4,6 +4,90 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.0] - 2026-01-18
+
+### Added
+- Complete OpenCode plugin implementation with full GLM quota querying functionality
+- **Authentication & Credential Discovery**:
+  - OpenCode auth.json file reading (cross-platform: Linux, macOS, Windows)
+  - Environment variable fallback (ZAI_API_KEY, ZHIPU_API_KEY, ZHIPUAI_API_KEY)
+  - Support for multiple provider IDs (zai-coding-plan, zai, z-ai, z.ai, zhipu, zhipuai)
+  - Flexible API key extraction (supports apiKey, api_key, token, key, accessToken, auth_token)
+
+- **Platform Detection**:
+  - Z.AI (Global) platform support with api.z.ai endpoints
+  - ZHIPU (China) platform support with open.bigmodel.cn / dev.bigmodel.cn endpoints
+  - Provider ID to platform mapping with validation
+
+- **API Integration**:
+  - Native HTTPS client with timeout handling and connection cleanup
+  - Three monitoring endpoints: quota limits, model usage, tool/MCP usage
+  - Time window calculation (24-hour rolling window)
+  - Query parameter encoding and URL construction
+  - Token sanitization in error messages
+
+- **Response Processing**:
+  - Quota limit parsing with human-readable type labels
+  - Model usage statistics aggregation
+  - MCP tool usage breakdown (Network Searches, Web Reads, ZRead calls)
+  - Usage percentage calculations
+
+- **Output Formatting**:
+  - ASCII table rendering with box-drawing characters (╔, ╠, ║, ╚, ╟, ╢)
+  - Progress bar visualization (█ █ ▒ ░)
+  - Platform and time period headers
+  - Token formatting with thousand separators
+
+- **OpenCode Integration**:
+  - `/glm_quota` slash command
+  - Minimal executor agent configuration for low context usage
+  - Skill documentation for TUI discovery
+
+### Changed
+- **Architecture**: Complete rewrite from standalone script to OpenCode plugin architecture
+- **Authentication**: Migrated from URL parsing to provider ID-based platform detection
+- **Output**: Replaced simple text output with formatted ASCII tables
+- **Dependencies**: Reduced to minimal set (@opencode-ai/plugin only)
+
+### Technical Details
+- **Lines of Code**: ~462 (TypeScript) + ~500 (tests, configs, docs)
+- **Modules**: 7 (index, client, endpoints, platforms, date-formatter, progress-bar, time-window)
+- **Test Coverage**: Functional tests for all utility modules, platform detection, credential discovery
+- **Platforms**: Z.AI (Global) and ZHIPU (China)
+- **API Endpoints**: 3 (quota/limit, model-usage, tool-usage)
+
+### Files Added
+```
+src/api/client.ts          # HTTPS client with timeout and error handling
+src/api/endpoints.ts       # Platform-specific endpoint definitions
+src/api/platforms.ts       # Platform detection and naming
+src/utils/date-formatter.ts # Date/time formatting utilities
+src/utils/progress-bar.ts  # Progress bar rendering
+src/utils/time-window.ts   # Rolling window calculation
+.opencode/command/glm_quota.md    # Slash command configuration
+.opencode/opencode.json           # Agent configuration
+.opencode/plugin/glm-quota.ts     # Plugin configuration
+.opencode/skill/glm-quota-skill.md # Skill documentation
+tests/functional/date-formatter.test.ts
+tests/functional/progress-bar.test.ts
+tests/functional/time-window.test.ts
+tests/module/platform-detection.test.ts
+scripts/query-usage.mjs    # Standalone query utility
+```
+
+### Removed
+- Legacy standalone script architecture
+- Duplicate test files (.test.js versions)
+- Temporary documentation files (COMPLETE_FIX_GUIDE.md, PLUGIN_TROUBLESHOOTING.md, TESTING_SLICE1.md)
+- Old query-usage.mjs in docs/
+
+### Security
+- Token masking in error messages
+- File permission validation for auth.json (0600 check on Unix)
+- Silent credential parsing failures (no sensitive data in logs)
+
+---
+
 ## [0.1.0] - 2026-01-17
 
 ### Added
