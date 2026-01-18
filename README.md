@@ -249,7 +249,7 @@ MIT © 2026
 
 ## Acknowledgments
 
-- API specification verified from [zai-org/zai-coding-plugins](https://github.com/zai-org/zai-coding-plugins)
+- **Adaptation from [zai-org/zai-coding-plugins](https://github.com/zai-org/zai-coding-plugins)** - This plugin is an OpenCode adaptation of the original Z.ai coding plugins repository
 - Built for [OpenCode](https://opencode.ai)
 
 ## Changelog
