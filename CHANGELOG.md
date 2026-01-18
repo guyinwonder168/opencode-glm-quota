@@ -4,6 +4,34 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] - 2026-01-18
+
+### Added
+- **Complete GLM Quota Plugin** with full functionality:
+  - Real-time quota monitoring (5-hour token cycle, monthly MCP usage)
+  - Model usage statistics (24-hour rolling window)
+  - MCP tool usage tracking (web_search, web_reader, zread)
+  - ASCII table output with visual progress bars (╔ ═ ╗ ║ ╠ ╣ ╚)
+  - Cross-platform support (Linux, macOS, Windows)
+
+### Changed
+- Migrated from standalone script to complete OpenCode plugin architecture
+- Full API integration replacing placeholder messages
+- Enhanced credential discovery with multi-format support
+
+### Technical
+- 462 lines TypeScript (7 modules)
+- 3 API endpoints: quota limits, model usage, tool usage
+- 2 platforms: Z.AI (global), ZHIPU (China)
+- Native HTTPS client with timeout and error handling
+
+### Files
+- `src/api/client.ts`, `endpoints.ts`, `platforms.ts`
+- `src/utils/date-formatter.ts`, `progress-bar.ts`, `time-window.ts`
+- `.opencode/command/glm_quota.md`, `opencode.json`, `plugin/`, `skill/`
+
+---
+
 ## [1.0.0] - 2026-01-18
 
 ### Added
