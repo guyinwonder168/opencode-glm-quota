@@ -36,9 +36,9 @@ jobs:
         run: npm run lint
 
       - name: Publish to npm
-        run: npm publish --provenance
+        run: npm publish --provenance --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.github-token }}
 
       - name: Create GitHub Release Archive
         uses: actions/upload-artifact@v4
