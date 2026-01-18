@@ -12,7 +12,7 @@
 
 | Slice | Status | Date | Tests | Coverage |
 |-------|--------|------|--------|----------|
-| Slice 1: Authentication & Credential Discovery | ✅ **COMPLETED** | 2026-01-18 | 16/16 | 100% |
+| Slice 1: Authentication & Credential Discovery | ⏳ **TODO** | - | - | - |
 | Slice 1.5: OpenCode Command & Skill | ⏳ **TODO** | - | - | - |
 | Slice 2: Time Window & Utility Functions | ⏳ **TODO** | - | - | - |
 | Slice 3: Single Endpoint Query | ⏳ **TODO** | - | - | - |
@@ -43,24 +43,24 @@ NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ RED: Write failing test                                   │
+│ RED: Write failing test                                     │
 │   - Write ONE minimal test showing desired behavior         │
-│   - MUST watch it fail (proves it tests something)        │
+│   - MUST watch it fail (proves it tests something)          │
 └─────────────────┬───────────────────────────────────────────┘
                   │ Verify fails correctly
                   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ GREEN: Write minimal code                                  │
-│   - Simplest code to make test pass                       │
-│   - Don't add features or refactor yet                    │
+│ GREEN: Write minimal code                                   │
+│   - Simplest code to make test pass                         │
+│   - Don't add features or refactor yet                      │
 └─────────────────┬───────────────────────────────────────────┘
                   │ Verify passes
                   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ REFACTOR: Clean up                                       │
-│   - Remove duplication                                    │
-│   - Improve names                                         │
-│   - Extract helpers (keep tests green)                    │
+│ REFACTOR: Clean up                                          │
+│   - Remove duplication                                      │
+│   - Improve names                                           │
+│   - Extract helpers (keep tests green)                      │
 └─────────────────┬───────────────────────────────────────────┘
                   │
                   ▼
@@ -159,26 +159,19 @@ Each slice MUST:
 
 ## 3. Vertical Slices (Detailed)
 
-### SLICE 1: Authentication & Credential Discovery ✅ **COMPLETED**
+### SLICE 1: Authentication & Credential Discovery ⏳ **NEW**
 
 **User Value:** Users see helpful error message when not authenticated, guiding them to set up credentials.
 
-**Status:** ✅ Completed on 2026-01-18
-**Tests:** 16/16 passing
-**Coverage:** 100% of credential discovery logic
+**Status:** ⏳ TODO  
+**Priority:** High (prerequisite for user-facing command)
 
 **Acceptance Criteria:**
-- [x] Plugin reads OpenCode auth.json from correct path
-- [x] Plugin detects ZAI and ZHIPU platforms from provider IDs
-- [x] Plugin falls back to environment variables for testing
-- [x] Plugin throws clear error when no credentials found
-- [x] Error message includes setup instructions
-
-**Files Created:** ✅
-- `src/index.ts` - Plugin entry point with credential discovery
-- `tests/module/credential-discovery.test.ts` - Complete test suite (16 tests)
-- `tests/fixtures/auth-zai-coding-plan.json` - Test fixture for ZAI auth
-- `tests/fixtures/auth-zhipu.json` - Test fixture for Zhipu auth
+- [ ] Plugin reads OpenCode auth.json from correct path
+- [ ] Plugin detects ZAI and ZHIPU platforms from provider IDs
+- [ ] Plugin falls back to environment variables for testing
+- [ ] Plugin throws clear error when no credentials found
+- [ ] Error message includes setup instructions
 
 **Dependencies:** None (foundation slice)
 
