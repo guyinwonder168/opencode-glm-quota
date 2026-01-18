@@ -43,6 +43,9 @@
   "peerDependencies": {
     "@opencode-ai/plugin": ">=0.1.0"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@opencode-ai/plugin": "latest",
     "@types/node": "^20.0.0",
