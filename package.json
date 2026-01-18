@@ -14,7 +14,7 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "node --test",
+    "test": "tsx --test",
     "lint": "eslint src/"
   },
   "keywords": [
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@opencode-ai/plugin": "latest",
     "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
