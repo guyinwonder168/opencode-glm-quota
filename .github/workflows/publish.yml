@@ -38,7 +38,7 @@ jobs:
       - name: Publish to npm
         run: npm publish --provenance --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_READ_WRITE }}
+          NODE_AUTH_TOKEN: ${{ secrets.github-token }}
 
       - name: Create GitHub Release Archive
         uses: actions/upload-artifact@v4
