@@ -1,7 +1,5 @@
 # TDD Implementation Plan - OpenCode GLM Quota Plugin
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Build a production-ready OpenCode plugin that queries Z.ai GLM Coding Plan usage statistics using Test-Driven Development with vertical slicing strategy.
 
 **Architecture:** OpenCode Plugin System with TypeScript, native Node.js HTTP (https), Node.js native test runner, and Undici MockAgent for HTTP mocking.
@@ -15,13 +13,14 @@
 | Slice | Status | Date | Tests | Coverage |
 |-------|--------|------|--------|----------|
 | Slice 1: Authentication & Credential Discovery | ✅ **COMPLETED** | 2026-01-18 | 16/16 | 100% |
+| Slice 1.5: OpenCode Command & Skill | ⏳ **TODO** | - | - | - |
 | Slice 2: Time Window & Utility Functions | ⏳ **TODO** | - | - | - |
 | Slice 3: Single Endpoint Query | ⏳ **TODO** | - | - | - |
 | Slice 4: Multiple Endpoints & Display | ⏳ **TODO** | - | - | - |
 | Slice 5: Error Handling & Edge Cases | ⏳ **TODO** | - | - | - |
 | Slice 6: Refactoring & Optimization | ⏳ **TODO** | - | - | - |
 
-**Overall Progress:** 1/6 slices complete (16.7%)
+**Overall Progress:** 1.5/7 slices complete (21.4%)
 
 ---
 
@@ -182,6 +181,50 @@ Each slice MUST:
 - `tests/fixtures/auth-zhipu.json` - Test fixture for Zhipu auth
 
 **Dependencies:** None (foundation slice)
+
+---
+
+### SLICE 1.5: OpenCode Command & Skill Integration ⏳ **NEW**
+
+**User Value:** Users can invoke `/glm_quota` command with full discoverability, matching the Claude Code plugin experience.
+
+**Status:** ⏳ TODO  
+**Priority:** High (prerequisite for user-facing command)
+
+**Acceptance Criteria:**
+- [ ] `.opencode/command/glm_quota.md` created with command definition
+- [ ] `.opencode/skill/glm-quota-skill.md` created with skill definition
+- [ ] `.opencode/opencode.json` created with agent definition
+- [ ] `scripts/query-usage.mjs` ported from Claude Code
+- [ ] Command works when user types `/glm_quota`
+- [ ] Skill properly invokes TypeScript plugin logic
+- [ ] Agent orchestrates workflow correctly
+- [ ] Output matches expected ASCII table format
+
+**Files to Create:**
+
+| File | Description | Source |
+|------|-------------|--------|
+| `.opencode/command/glm_quota.md` | Command file | New |
+| `.opencode/skill/glm-quota-skill.md` | Skill file | Based on Claude Code pattern |
+| `.opencode/opencode.json` | Agent definition | New |
+| `scripts/query-usage.mjs` | Standalone CLI script | Port from zai-coding-plugins |
+
+**Dependencies:** Slice 1 (plugin must work before command can invoke it)
+
+**Test Strategy:**
+- Manual testing: Invoke `/glm_quota` command and verify output
+- No automated tests for command/skill files (they are configuration)
+
+**Estimated Time:** 1-2 hours
+
+**Steps:**
+1. Create `.opencode/command/glm_quota.md` with command YAML
+2. Create `.opencode/skill/glm-quota-skill.md` with skill YAML
+3. Create `.opencode/opencode.json` with agent definition
+4. Port `scripts/query-usage.mjs` from Claude Code
+5. Verify command works in OpenCode TUI
+6. Verify output format matches expected ASCII table
 
 ---
 
@@ -526,20 +569,23 @@ npm run test -- --watch
 
 ```
 Slice 1 (Auth) ───┐
-                  ├───> Slice 3 (Single Endpoint)
-Slice 2 (Utils) ───┘                    │
-                                         ├───> Slice 5 (Error Handling)
-                                         │
-                                         └───> Slice 6 (Refactoring)
+                  ├───> Slice 1.5 (Command/Skill) ───┐
+Slice 2 (Utils) ───┘                                  │
+                                                      ├───> Slice 3 (Single Endpoint)
+                                                              │
+                                                              ├───> Slice 5 (Error Handling)
+                                                              │
+                                                              └───> Slice 6 (Refactoring)
 ```
 
 **Key Dependencies:**
 1. **Slice 1 must complete first** - All other slices depend on authentication
-2. **Slice 2 should parallelize with Slice 1** - Utility functions independent of auth
-3. **Slice 3 depends on both** - Needs auth + utilities
-4. **Slice 4 depends on Slice 3** - Extends single endpoint to multiple
-5. **Slice 5 depends on Slice 4** - Error handling for complete feature
-6. **Slice 6 depends on Slice 5** - Refactor complete feature
+2. **Slice 1.5 depends on Slice 1** - Command/skill needs working plugin to invoke
+3. **Slice 2 should parallelize with Slice 1** - Utility functions independent of auth
+4. **Slice 3 depends on both** - Needs auth + utilities
+5. **Slice 4 depends on Slice 3** - Extends single endpoint to multiple
+6. **Slice 5 depends on Slice 4** - Error handling for complete feature
+7. **Slice 6 depends on Slice 5** - Refactor complete feature
 
 ### 6.2 Technical Risks
 

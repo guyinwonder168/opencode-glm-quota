@@ -238,48 +238,178 @@ if (process.env.ZHIPU_API_KEY || process.env.ZHIPUAI_API_KEY) {
 
 **Note:** Environment variables are intended for development and testing only. For production use, always use OpenCode's `/connect` command.
 
+### 2.4 OpenCode Command & Skill Integration
+
+OpenCode plugins support multiple integration patterns. This section describes how to expose the quota query functionality through OpenCode's command and skill system.
+
+**Architecture Overview:**
+
+| Layer | File | Purpose |
+|-------|------|---------|
+| **Command** | `.opencode/command/glm_quota.md` | User-facing `/glm_quota` slash command |
+| **Agent** | `.opencode/opencode.json` | Orchestrates workflow when command invoked |
+| **Skill** | `.opencode/skill/glm-quota-skill.md` | Reusable capability for quota queries |
+| **Script** | `scripts/query-usage.mjs` | Actual implementation (Node.js) |
+| **Plugin** | `src/index.ts` | Core plugin with TypeScript implementation |
+
+**Command File (`.opencode/command/glm_quota.md`):**
+
+```yaml
+---
+allowed-tools: all
+description: Query Z.ai GLM Coding Plan usage statistics including quota limits, model usage, and MCP tool usage
+agent: glm-quota-agent
+---
+
+# GLM Quota Command
+
+Invoke @glm-quota-agent to query usage statistics for the current account.
+
+## Usage
+
+/glm_quota
+
+## Output
+
+Displays:
+- Current quota percentages (5-hour token cycle, monthly MCP)
+- Model usage statistics (24-hour rolling window)
+- MCP tool usage statistics (web_search, web_reader, etc.)
+```
+
+**Skill File (`.opencode/skill/glm-quota-skill.md`):**
+
+```yaml
+---
+name: glm-quota-skill
+description: Query GLM Coding Plan usage statistics. Returns quota limits, model usage, and tool usage with formatted output.
+allowed-tools: Bash, Read
+---
+
+# GLM Quota Skill
+
+Execute the usage query script and return formatted results.
+
+## Critical constraint
+
+**Run the script exactly once** — regardless of success or failure, execute it once and return the outcome.
+
+## Execution
+
+### Run the query
+
+```bash
+node scripts/query-usage.mjs
+```
+
+> If working directory is elsewhere, use absolute path or cd first.
+
+### Return the result
+
+- **Success**: Display usage statistics in ASCII table format
+- **Failure**: Show error details and likely cause with setup instructions
+
+## Prohibited actions
+
+- Do not run multiple queries
+- Do not retry automatically after failure
+- Do not modify files
+```
+
+**Agent Definition (`.opencode/opencode.json`):**
+
+```json
+{
+  "agent": {
+    "glm-quota-agent": {
+      "mode": "subagent",
+      "description": "Query GLM Coding Plan usage statistics for the current account",
+      "system": "You are responsible for querying the user's current usage information. Call @glm-quota-skill to perform the usage query. The skill will run query-usage.mjs automatically, then return the result. Based on the skill output, respond to the user with the formatted usage statistics.",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  }
+}
+```
+
+**How It Works:**
+
+1. User types `/glm_quota` in OpenCode
+2. OpenCode loads command file and invokes agent
+3. Agent loads system prompt and invokes skill
+4. Skill runs `scripts/query-usage.mjs` (which uses TypeScript plugin logic)
+5. Results returned through agent to user
+
+**Alternative: Direct Plugin Invocation**
+
+The plugin can also be invoked directly without commands/skills:
+
+```typescript
+// In src/index.ts
+export const GlmQuotaPlugin: Plugin = async ({ client }) => {
+  return {
+    tool: {
+      glm_quota: tool({
+        description: 'Query Z.ai GLM Coding Plan usage statistics...',
+        args: {},
+        async execute(args, context) {
+          // Implementation directly in plugin
+        }
+      })
+    }
+  }
+}
+```
+
+**Decision: Use Both Patterns**
+
+- **Direct plugin** (`glm_quota` tool) - For programmatic access within OpenCode
+- **Command file** (`/glm_quota`) - For user discoverability
+
+This provides maximum flexibility while matching the Claude Code plugin architecture.
+
 ---
 
 ## 3. Public Distribution - Project Structure
 
-### 3.1 Repository Structure
+### 3.1 Repository Structure (Updated)
 
 ```
 opencode-glm-quota/
+├── .opencode/                    # OpenCode command/skill/agent structure
+│   ├── command/
+│   │   └── glm_quota.md          # Command file for /glm_quota
+│   ├── skill/
+│   │   └── glm-quota-skill.md    # Skill for quota queries
+│   └── opencode.json             # Agent definitions
 ├── src/
-│   └── index.ts              # Main plugin source code
-├── dist/                     # Compiled output (generated)
+│   ├── index.ts                  # Main plugin (TypeScript)
+│   ├── api/
+│   │   ├── client.ts             # HTTP client for API calls
+│   │   ├── endpoints.ts          # Endpoint definitions
+│   │   └── ZAI/ZHIPU platform detection
+ platforms.ts          #│   └── utils/
+│       ├── date-formatter.ts     # formatDateTime()
+│       ├── time-window.ts        # getTimeWindow()
+│       └── progress-bar.ts       # createProgressBar()
+├── scripts/
+│   └── query-usage.mjs           # Standalone CLI script (port from Claude Code)
+├── dist/                         # Compiled output (generated)
 │   ├── index.js
 │   ├── index.js.map
 │   └── index.d.ts
-├── tests/                    # NEW: Test suite
-│   ├── functional/            # Pure function tests
-│   ├── module/               # Side effect tests with mocks
-│   ├── integration/           # End-to-end pipeline tests
-│   ├── contract/             # API contract validation tests
-│   ├── error-handling/        # Error handling tests
-│   ├── mocks/                # Mock infrastructure
-│   │   ├── https.mock.ts    # Undici MockAgent wrapper
-│   │   ├── fs.mock.ts         # File system mocking
-│   │   ├── process.mock.ts      # Environment variable mocking
-│   │   └── types.ts          # Shared mock types
-│   └── fixtures/            # Test data fixtures
-│       ├── auth-valid.json
-│       ├── api-quota-success.json
-│       ├── api-model-success.json
-│       ├── api-tool-success.json
-│       └── api-error-401.json
-├── package.json              # npm package configuration
-├── tsconfig.json             # TypeScript configuration
-├── tsconfig.test.json         # NEW: Test-specific TypeScript config
-├── README.md                 # Public documentation
-├── LICENSE                   # MIT License
-├── CHANGELOG.md              # Version history
-├── .gitignore                # Git ignore rules
-├── .npmignore                # npm ignore rules
-└── .github/
-    └── workflows/
-        └── publish.yml       # GitHub Actions for auto-publish
+├── tests/                        # Test suite
+│   ├── functional/               # Pure function tests
+│   ├── module/                   # Side effect tests with mocks
+│   ├── integration/              # End-to-end tests
+│   ├── error-handling/           # Error scenarios
+│   ├── mocks/                    # Mock infrastructure
+│   └── fixtures/                 # Test data
+├── package.json                  # npm package configuration
+├── tsconfig.json                 # TypeScript configuration
+├── README.md                     # Public documentation
+├── LICENSE                       # MIT License
+└── CHANGELOG.md                  # Version history
 ```
 
 ### 3.2 package.json
