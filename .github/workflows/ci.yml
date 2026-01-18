@@ -14,8 +14,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
-        # Fail fast: Cancel all jobs if one fails
-        fail-fast: false
+      fail-fast: false
 
     steps:
       - name: Checkout repository
