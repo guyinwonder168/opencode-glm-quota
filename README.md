@@ -24,13 +24,7 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 npm install opencode-glm-quota
 ```
 
-Then add to your OpenCode config (`~/.config/opencode/config.json`):
-
-```json
-{
-  "plugins": ["opencode-glm-quota"]
-}
-```
+OpenCode automatically discovers and loads plugins from npm. No additional configuration required.
 
 ### Option 2: From GitHub
 
@@ -38,10 +32,18 @@ Then add to your OpenCode config (`~/.config/opencode/config.json`):
 npm install github:guyinwonder168/opencode-glm-quota
 ```
 
-### Option 3: Manual Installation
+### Option 3: Local Development
 
-1. Download the latest release from GitHub
-2. Copy `dist/index.js` to `~/.config/opencode/plugin/glm-quota.js`
+```bash
+# Clone and build
+git clone https://github.com/guyinwonder168/opencode-glm-quota.git
+cd opencode-glm-quota
+npm install
+npm run build
+
+# Link for local testing
+npm link
+```
 
 ## Quick Start
 
@@ -89,32 +91,32 @@ After authentication, simply run:
 ### Output Example
 
 ```
-╔════════════════════════════════════════════════════════════╗
-║           Z.ai GLM Coding Plan Usage Statistics            ║
-╠════════════════════════════════════════════════════════════╣
-║  Platform: ZAI                                             ║
-║  Period: 2026-01-12 14:00:00 → 2026-01-13 14:59:59         ║
-╠════════════════════════════════════════════════════════════╣
-║  📊 QUOTA LIMITS                                           ║
-╟────────────────────────────────────────────────────────────╢
-║  Token usage(5 Hour)   [████████████░░░░░░░░░░░░░░░░░░]  40.5% ║
-║  MCP usage(1 Month)    [████░░░░░░░░░░░░░░░░░░░░░░░░░░]  12.3% ║
-║       Used: 123/1000                                       ║
-╠════════════════════════════════════════════════════════════╣
-║  🤖 MODEL USAGE (24h)                                      ║
-╟────────────────────────────────────────────────────────────╢
-║  {                                                         ║
-║    "requests": 45,                                         ║
-║    "tokens": 125000                                        ║
-║  }                                                         ║
-╠════════════════════════════════════════════════════════════╣
-║  🔧 TOOL/MCP USAGE (24h)                                   ║
-╟────────────────────────────────────────────────────────────╢
-║  {                                                         ║
-║    "web_search": 15,                                       ║
-║    "web_reader": 8                                         ║
-║  }                                                         ║
-╚════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════════╗
+║                                                            ║
+║           Z.ai GLM Coding Plan Usage Statistics              ║
+║                                                            ║
+╠════════════════════════════════════════════════════════════════╣
+║  Platform: ZAI                                              ║
+║  Period:   2026-01-17 21:00:00 → 2026-01-18 20:59:59         ║
+╠════════════════════════════════════════════════════════════════╣
+║  📊 QUOTA LIMITS                                             ║
+╟────────────────────────────────────────────────────────────────╢
+║  Token usage(5 Hour)      [███████████████████░░░░░░░░░]  40.5% ║
+║  MCP usage(1 Month)       [████░░░░░░░░░░░░░░░░░░░░░░░░░]  12.3% ║
+║       Used: 123/1,000                                           ║
+╠════════════════════════════════════════════════════════════════╣
+║  🤖 MODEL USAGE (24h)                                          ║
+╟────────────────────────────────────────────────────────────────╢
+║  Total Tokens (24h): 12,500,000 (31% of 5h limit)             ║
+║  5h Window Usage: 40.5% of 40,000,000                          ║
+║  Total Calls: 1,234                                            ║
+╠════════════════════════════════════════════════════════════════╣
+║  🔧 TOOL/MCP USAGE (24h)                                       ║
+╟────────────────────────────────────────────────────────────────╢
+║  Network Searches: 5,678                                       ║
+║  Web Reads: 2,345                                             ║
+║  ZRead Calls: 890                                              ║
+╚════════════════════════════════════════════════════════════════╝
 ```
 
 ### Error Handling
@@ -124,12 +126,17 @@ The plugin uses fail-fast error handling. If any API request fails, it will disp
 **Example Error Output:**
 
 ```
-╔════════════════════════════════════════════════════════════╗
-║  ❌ Authentication Error                                    ║
-╠════════════════════════════════════════════════════════════╣
-║  Not authenticated with Z.AI. Please run `/connect`       ║
-║  command in OpenCode TUI and select "Z.AI Coding Plan".    ║
-╚════════════════════════════════════════════════════════════╝
+❌ Z.ai Credentials Not Found
+
+Please authenticate first:
+
+1. Run '/connect' command in OpenCode TUI
+2. Select "Z.AI Coding Plan" or "Z.AI" (for global)
+3. Or "Zhipu" (for China region)
+
+For development/testing, you can also set environment variables:
+  - ZAI_API_KEY (global platform)
+  - ZHIPU_API_KEY or ZHIPUAI_API_KEY (China platform)
 ```
 
 ## API Reference
@@ -206,10 +213,21 @@ npm run prepublishOnly
 
 ```
 src/
-  index.ts           # Main plugin entry point
-dist/               # Compiled JavaScript (generated)
-package.json         # Dependencies and scripts
-tsconfig.json        # TypeScript configuration
+  index.ts              # Main plugin entry point (463 lines)
+  api/
+    client.ts           # HTTPS client with timeout and error handling
+    endpoints.ts        # Platform-specific API endpoints
+    platforms.ts        # Platform detection and naming
+  utils/
+    date-formatter.ts   # Date/time formatting utilities
+    progress-bar.ts     # ASCII progress bar rendering
+    time-window.ts      # Rolling window calculation
+dist/                   # Compiled JavaScript (generated)
+tests/                  # Test suite
+.opencode/              # OpenCode integration files
+package.json            # Dependencies and scripts
+tsconfig.json           # TypeScript configuration
+```
 ```
 
 ### Code Style Guidelines
