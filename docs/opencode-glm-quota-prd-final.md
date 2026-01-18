@@ -641,7 +641,7 @@ jobs:
 ```markdown
 # opencode-glm-quota
 
-[![npm version](https://badge.fury.io/js/opencode-glm-quota.svg)](https://www.npmjs.com/package/opencode-glm-quota)
+[![npm version](https://img.shields.io/npm/v/opencode-glm-quota.svg)](https://www.npmjs.com/package/opencode-glm-quota)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 OpenCode plugin to query Z.ai GLM Coding Plan usage statistics.
