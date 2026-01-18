@@ -90,7 +90,7 @@ The workflow automatically publishes to npm when a release is created.
 
 The README includes a CI status badge that shows the current build status:
 ```
-[![Build Status](https://github.com/guyinwonder168/opencode-glm-quota/workflows/Build%20&%20Test/badge.svg)]
+[![Build Status](https://github.com/guyinwonder168/opencode-glm-quota/workflows/CI/badge.svg)]
 ```
 
 This badge updates automatically with each commit.
