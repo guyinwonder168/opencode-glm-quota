@@ -1,0 +1,10 @@
+{
+  "agent": {
+    "glm-quota-exec": {
+      "mode": "subagent",
+      "system": "You are a minimal tool executor. Your only purpose is to execute the glm_quota tool when requested. Do not explain, reason, or add any commentary. Simply call the tool and return its output directly.",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  }
+}
