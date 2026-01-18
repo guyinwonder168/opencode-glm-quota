@@ -15,13 +15,11 @@ import { detectPlatform, getPlatformName } from "./api/platforms.js";
 import { getEndpoints } from "./api/endpoints.js";
 import { queryEndpoint } from "./api/client.js";
 import { getTimeWindow, getTimeWindowQueryParams } from "./utils/time-window.js";
-import { createProgressBar, formatProgressLine } from "./utils/progress-bar.js";
+import { formatProgressLine } from "./utils/progress-bar.js";
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-
-const PLUGIN_VERSION = "1.0.0";
 
 const CANDIDATE_PROVIDER_IDS = [
   'zai-coding-plan',
@@ -206,6 +204,101 @@ function processQuotaLimit(data: Record<string, unknown>): ProcessedQuotaLimit {
 // ============================================================================
 
 /**
+ * Format number with thousand separators
+ */
+function formatNumber(num: number): string {
+  return num.toLocaleString('en-US');
+}
+
+/**
+ * Format model usage data as readable lines
+ */
+function formatModelUsage(
+  data: Record<string, unknown>,
+  quotaData: ProcessedQuotaLimit | null
+): string[] {
+  const lines: string[] = [];
+  const totalUsage = data.totalUsage as Record<string, unknown> | undefined;
+  
+  // Find token limit info from quota
+  let tokenLimit = 40000000; // Default 40M
+  let tokenPct = 0;
+  if (quotaData?.limits) {
+    for (const limit of quotaData.limits) {
+      if (limit.type === 'Token usage(5 Hour)') {
+        tokenPct = typeof limit.percentage === 'number' ? limit.percentage : 0;
+        tokenLimit = (limit.total as number) || 40000000;
+        break;
+      }
+    }
+  }
+  
+  if (totalUsage) {
+    const calls = totalUsage.totalModelCallCount as number | undefined;
+    const tokens = totalUsage.totalTokensUsage as number | undefined;
+    
+    if (tokens !== undefined) {
+      // Show 24h tokens and percentage relative to 5h limit
+      const pct24h = Math.round((tokens / tokenLimit) * 100);
+      lines.push(`  Total Tokens (24h): ${formatNumber(tokens)} (${pct24h}% of 5h limit)`);
+      lines.push(`  5h Window Usage: ${tokenPct}% of ${formatNumber(tokenLimit)}`);
+    }
+    
+    if (calls !== undefined) {
+      lines.push(`  Total Calls: ${formatNumber(calls)}`);
+    }
+  } else {
+    lines.push('  No usage data');
+  }
+  
+  return lines;
+}
+
+/**
+ * Format tool usage data as readable lines
+ */
+function formatToolUsage(
+  data: Record<string, unknown>,
+  quotaData: ProcessedQuotaLimit | null
+): string[] {
+  const lines: string[] = [];
+  const totalUsage = data.totalUsage as Record<string, unknown> | undefined;
+  
+  // Calculate total tool calls for percentage
+  if (totalUsage) {
+    const search = totalUsage.totalNetworkSearchCount as number | undefined;
+    const webRead = totalUsage.totalWebReadMcpCount as number | undefined;
+    const zread = totalUsage.totalZreadMcpCount as number | undefined;
+    
+    if (search !== undefined) lines.push(`  Network Searches: ${formatNumber(search)}`);
+    if (webRead !== undefined) lines.push(`  Web Reads: ${formatNumber(webRead)}`);
+    if (zread !== undefined) lines.push(`  ZRead Calls: ${formatNumber(zread)}`);
+  }
+  
+  // Show MCP usage details from quota if available
+  if (quotaData?.limits) {
+    for (const limit of quotaData.limits) {
+      if (limit.type === 'MCP usage(1 Month)' && limit.usageDetails) {
+        const details = limit.usageDetails as unknown as Array<{modelCode: string; usage: number}>;
+        lines.push('  MCP Tool Details:');
+        const mcpTotal = details.reduce((sum, d) => sum + (d.usage || 0), 0);
+        for (const d of details) {
+          const pct = mcpTotal > 0 ? Math.round((d.usage / mcpTotal) * 100) : 0;
+          lines.push(`    - ${d.modelCode}: ${d.usage} (${pct}%)`);
+        }
+        break;
+      }
+    }
+  }
+  
+  if (lines.length === 0) {
+    lines.push('  No usage data');
+  }
+  
+  return lines;
+}
+
+/**
  * Format usage statistics as ASCII table
  * @param platform - Platform name
  * @param startTime - Start time string
@@ -226,73 +319,75 @@ function formatOutput(
   const lines: string[] = [];
   const platformName = getPlatformName(platform);
   
+  // Constants for line width (total 60 chars)
+  const LINE_WIDTH = 60;
+  const LINE_CONTENT = 58; // Between ║ and ║
+  const LINE_INDENT = 56;  // After "║  "
+  
   // Header
-  lines.push('╔════════════════════════════════════════════════════════════╗');
-  lines.push('║           Z.ai GLM Coding Plan Usage Statistics            ║');
-  lines.push('╠════════════════════════════════════════════════════════════╣');
-  lines.push(`║  Platform: ${platformName.padEnd(47)}║`);
-  lines.push(`║  Period: ${startTime} → ${endTime}  ║`);
-  lines.push('╠════════════════════════════════════════════════════════════╣');
+  lines.push('╔' + '═'.repeat(58) + '╗');
+  lines.push('║' + ' '.repeat(58) + '║');
+  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(35).padEnd(58) + '║');
+  lines.push('║' + ' '.repeat(58) + '║');
+  lines.push('╠' + '═'.repeat(58) + '╣');
+  // Platform line: "║  Platform: " (13 chars) + name + padding + "║"
+  lines.push('║  Platform: ' + platformName.padEnd(LINE_WIDTH - 13 - 1) + '║');
+  // Period line: "║  Period:   " (14 chars) + start + " → " + end + "║"
+  const periodLine = '║  Period:   ' + startTime + ' → ' + endTime;
+  lines.push(periodLine.padEnd(LINE_WIDTH) + '║');
+  lines.push('╠' + '═'.repeat(58) + '╣');
   
   // Quota Limits
-  lines.push('║  📊 QUOTA LIMITS                                           ║');
-  lines.push('╟────────────────────────────────────────────────────────────╢');
+  lines.push('║  📊 QUOTA LIMITS' + ' '.repeat(LINE_CONTENT - 14) + '║');
+  lines.push('╟' + '─'.repeat(58) + '╢');
   
   if (quotaData?.limits && Array.isArray(quotaData.limits)) {
     for (const limit of quotaData.limits) {
       const pct = typeof limit.percentage === 'number' ? limit.percentage : 0;
       const line = formatProgressLine(limit.type || 'Unknown', pct);
-      lines.push(`║  ${line.padEnd(56)}║`);
+      lines.push('║  ' + line.padEnd(LINE_INDENT) + '║');
       
       if (limit.currentValue !== undefined && limit.total !== undefined) {
-        const usageStr = `       Used: ${limit.currentValue}/${limit.total}`.padEnd(56);
-        lines.push(`║  ${usageStr}║`);
+        const usageStr = '       Used: ' + limit.currentValue + '/' + limit.total;
+        lines.push('║  ' + usageStr.padEnd(LINE_INDENT) + '║');
       }
     }
   } else {
-    lines.push('║  No quota data available                                   ║');
+    lines.push('║  No quota data available' + ' '.repeat(LINE_INDENT - 21) + '║');
   }
   
-  lines.push('╠════════════════════════════════════════════════════════════╣');
+  lines.push('╠' + '═'.repeat(58) + '╣');
   
   // Model Usage
-  lines.push('║  🤖 MODEL USAGE (24h)                                      ║');
-  lines.push('╟────────────────────────────────────────────────────────────╢');
+  lines.push('║  🤖 MODEL USAGE (24h)' + ' '.repeat(LINE_INDENT - 17) + '║');
+  lines.push('╟' + '─'.repeat(58) + '╢');
   
   if (modelData) {
-    const modelJson = JSON.stringify(modelData, null, 2);
-    const modelLines = modelJson.split('\n').slice(0, 8);
+    const modelLines = formatModelUsage(modelData, quotaData);
     for (const line of modelLines) {
-      lines.push(`║  ${line.substring(0, 56).padEnd(56)}║`);
-    }
-    if (modelJson.split('\n').length > 8) {
-      lines.push('║  ...                                                       ║');
+      lines.push('║  ' + line.padEnd(LINE_INDENT) + '║');
     }
   } else {
-    lines.push('║  No model usage data available                             ║');
+    lines.push('║  No model usage data available' + ' '.repeat(LINE_INDENT - 25) + '║');
   }
   
-  lines.push('╠════════════════════════════════════════════════════════════╣');
+  lines.push('╠' + '═'.repeat(58) + '╣');
   
   // Tool Usage
-  lines.push('║  🔧 TOOL/MCP USAGE (24h)                                   ║');
-  lines.push('╟────────────────────────────────────────────────────────────╢');
+  lines.push('║  🔧 TOOL/MCP USAGE (24h)' + ' '.repeat(LINE_INDENT - 20) + '║');
+  lines.push('╟' + '─'.repeat(58) + '╢');
   
   if (toolData) {
-    const toolJson = JSON.stringify(toolData, null, 2);
-    const toolLines = toolJson.split('\n').slice(0, 8);
+    const toolLines = formatToolUsage(toolData, quotaData);
     for (const line of toolLines) {
-      lines.push(`║  ${line.substring(0, 56).padEnd(56)}║`);
-    }
-    if (toolJson.split('\n').length > 8) {
-      lines.push('║  ...                                                       ║');
+      lines.push('║  ' + line.padEnd(LINE_INDENT) + '║');
     }
   } else {
-    lines.push('║  No tool usage data available                              ║');
+    lines.push('║  No tool usage data available' + ' '.repeat(LINE_INDENT - 24) + '║');
   }
   
   // Footer
-  lines.push('╚════════════════════════════════════════════════════════════╝');
+  lines.push('╚' + '═'.repeat(58) + '╝');
   
   return lines.join('\n');
 }
@@ -345,7 +440,7 @@ export const GlmQuotaPlugin: Plugin = async () => {
       glm_quota: tool({
         description: 'Query Z.ai GLM Coding Plan usage statistics including quota limits, model usage, and MCP tool usage',
         args: {},
-        async execute(_args, _context) {
+        async execute() {
           try {
             const credentials = await getCredentials();
             

@@ -57,8 +57,7 @@ export function formatPercentage(percentage: number, decimals: number = 1): stri
  */
 export function formatProgressLine(
   label: string,
-  percentage: number,
-  totalWidth: number = 60
+  percentage: number
 ): string {
   const bar = createProgressBar(percentage);
   const pctStr = formatPercentage(percentage).padStart(6);

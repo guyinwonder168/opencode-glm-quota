@@ -6,19 +6,6 @@
 type Platform = 'ZAI' | 'ZHIPU';
 
 /**
- * Provider ID to platform mapping
- */
-const PLATFORM_MAP: Record<string, Platform> = {
-  'zai-coding-plan': 'ZAI',
-  'zai': 'ZAI',
-  'z-ai': 'ZAI',
-  'z.ai': 'ZAI',
-  'zhipu': 'ZHIPU',
-  'zhipuai': 'ZHIPU',
-  'bigmodel': 'ZHIPU'
-};
-
-/**
  * Detect platform from provider ID
  * @param providerId - The provider ID from OpenCode authentication
  * @returns Platform type or null if unknown
@@ -32,7 +19,7 @@ function detectPlatform(providerId: string): Platform | null {
   }
   
   // Check for ZAI
-  if (lower.includes('zai') || lower === 'z.ai') {
+  if (lower.includes('zai') || lower === 'z.ai' || lower === 'z-ai') {
     return 'ZAI';
   }
   
