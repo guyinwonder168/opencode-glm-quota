@@ -332,6 +332,55 @@ export const GlmQuotaPlugin: Plugin = async ({ client }) => {
 export default GlmQuotaPlugin
 ```
 
+### Command with Minimal Agent Configuration
+
+To minimize context usage when using `/glm_quota` command, we've configured a specialized minimal agent:
+
+**Agent Definition (in `.opencode/opencode.json`):**
+```json
+{
+  "agent": {
+    "glm-quota-exec": {
+      "mode": "subagent",
+      "system": "You are a minimal tool executor. Your only purpose is to execute the glm_quota tool when requested. Do not explain, reason, or add any commentary. Simply call the tool and return its output directly.",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  }
+}
+```
+
+**Command File (`.opencode/command/glm_quota.md`):**
+```markdown
+---
+description: Execute GLM quota check
+agent: glm-quota-exec
+---
+Execute glm_quota tool.
+```
+
+**How It Works:**
+1. User types `/glm_quota` in OpenCode
+2. OpenCode loads command file (15 characters - minimal!)
+3. System prompt sets agent to minimal executor mode
+4. LLM receives minimal instructions: "Execute glm_quota tool"
+5. LLM calls `glm_quota` tool directly without reasoning
+6. Tool returns results to user
+
+**Context Usage Comparison:**
+
+| Approach | Command File Size | System Prompt | Reasoning | Total Context |
+|----------|-------------------|---------------|-----------|----------------|
+| Standard command | ~300 chars | Default agent | Full | High |
+| Minimal command | ~15 chars | Minimal agent (no reasoning) | None | **Low** |
+
+**Benefits:**
+- ✅ Minimal command file content (15 chars vs 300)
+- ✅ Minimal agent system prompt (no explanation/reasoning)
+- ✅ Direct tool execution without intermediate text
+- ✅ Still discoverable in TUI autocomplete
+- ✅ Part of OpenCode command system
+
 **Plugin Context Received:**
 - `client`: OpenCode SDK client for logging, app context
 - `project`: Current project information
@@ -346,6 +395,91 @@ export default GlmQuotaPlugin
 - ✅ Receive auth context from OpenCode automatically
 - ✅ Use `client.app.log()` for structured logging
 - ✅ Throw errors and let OpenCode display them
+
+### Critical Plugin Rules
+
+**CRITICAL: Plugin Loader Behavior**
+
+OpenCode's plugin loader (`packages/opencode/src/plugin/index.ts`) iterates through **ALL exports** from a module and tries to initialize each one as a plugin:
+
+```typescript
+for (const [_name, fn] of Object.entries<PluginInstance>(mod)) {
+  const init = await fn(input)  // ← EVERY export is called here!
+  hooks.push(init)
+}
+```
+
+**Rule 1: Correct Import Paths**
+
+```typescript
+// ❌ WRONG
+import { tool } from "@opencode-ai/plugin"
+
+// ✅ CORRECT
+import { tool } from "@opencode-ai/plugin/tool"
+```
+
+The `tool` helper is exported from the subpath `/tool`, not from the main package index.
+
+**Rule 2: Only Export Plugin Functions**
+
+```typescript
+// ❌ WRONG - Loader will try to initialize these as plugins
+export type Platform = 'ZAI' | 'ZHIPU'
+export interface Credentials { token: string; platform: Platform }
+export function getProviderPlatform(...) { ... }
+export function createCredentialError() { ... }
+export function getCredentials() { ... }
+export const MyPlugin: Plugin = async (ctx) => { ... }
+
+// ✅ CORRECT - Only plugin functions are exported
+type Platform = 'ZAI' | 'ZHIPU'              // Internal
+interface Credentials { token: string; platform: Platform } // Internal
+function getProviderPlatform(...) { ... }           // Internal
+function createCredentialError() { ... }               // Internal
+function getCredentials() { ... }                    // Internal
+export const MyPlugin: Plugin = async (ctx) => { ... }
+export default MyPlugin
+```
+
+**Why This Matters:**
+
+If you export non-plugin items (types, interfaces, helper functions), the loader will:
+1. Try to call types/interfaces as functions → TypeError
+2. Call helper functions → They don't return Hooks object → Error
+3. Eventually call the actual plugin → Might work, but errors from previous attempts cause startup failure
+
+**What Happens with Wrong Exports:**
+
+```typescript
+// File with 6 exports
+export type Platform = ...
+export interface Credentials { ... }
+export function getProviderPlatform() { ... }
+export function createCredentialError() { ... }
+export function getCredentials() { ... }
+export const GlmQuotaPlugin: Plugin = ...
+export default GlmQuotaPlugin
+
+// Loader does:
+const init = await Platform()        // ❌ TypeError: Platform is a type, not a function
+const init = await Credentials()     // ❌ TypeError: Credentials is an interface
+const init = await getProviderPlatform() // ❌ Returns null, not a Hooks object
+const init = await createCredentialError() // ❌ Returns string, not a Hooks object
+const init = await getCredentials()       // ❌ Returns null, not a Hooks object
+const init = await GlmQuotaPlugin() // ✅ Finally works!
+```
+
+**Best Practice:**
+
+Keep helper functions internal (remove `export` keyword) to prevent the plugin loader from attempting to initialize them as plugins.
+
+**Reference Error:**
+```
+TypeError: null is not an object (evaluating 'hook.config')
+```
+
+This error occurs when a non-plugin export is called and returns something other than a valid Hooks object.
 
 ## Testing
 - Write tests in TypeScript with `.test.ts` extension

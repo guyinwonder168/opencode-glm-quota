@@ -5,8 +5,8 @@
  * model usage, and MCP tool usage.
  */
 
-import { type Plugin } from '@opencode-ai/plugin'
-import { tool } from '@opencode-ai/plugin/tool'
+import { type Plugin } from "@opencode-ai/plugin"
+import { tool } from "@opencode-ai/plugin/tool"
 
 /**
  * Platform type supported by plugin
@@ -94,13 +94,15 @@ export async function getCredentials(authContext?: { providerId: string; token: 
 /**
  * Main GLM Quota Plugin
  */
-export const GlmQuotaPlugin: Plugin = async () => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const GlmQuotaPlugin: Plugin = async (_ctx) => {
   return {
     tool: {
       glm_quota: tool({
         description: 'Query Z.ai GLM Coding Plan usage statistics including quota limits, model usage, and MCP tool usage',
         args: {},
-        async execute() {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        async execute(_args, _context) {
           // TODO: Implement full feature in subsequent slices
           // For now, verify credential discovery works
           const credentials = await getCredentials()
@@ -113,3 +115,5 @@ export const GlmQuotaPlugin: Plugin = async () => {
     }
   }
 }
+
+export default GlmQuotaPlugin
