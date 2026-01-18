@@ -204,7 +204,7 @@ tests/
 
 ## Documentation Guidelines
 
-Follow these principles from [`.opencode/context/core/standards/docs.md`](.opencode/context/core/standards/docs.md):
+Follow these principles for clear, maintainable documentation:
 
 ### Golden Rule
 If users ask the same question twice, document it.

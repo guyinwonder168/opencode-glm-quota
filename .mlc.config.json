@@ -7,7 +7,7 @@
       "pattern": "^https://www.npmjs.com/package/opencode-glm-quota"
     },
     {
-      "pattern": "^https://badge.fury.io/js/opencode-glm-quota"
+      "pattern": "^https://www.npmjs.com/settings"
     }
   ],
   "ignoreDirs": [
