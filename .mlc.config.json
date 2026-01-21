@@ -8,6 +8,9 @@
     },
     {
       "pattern": "^https://www.npmjs.com/settings"
+    },
+    {
+      "pattern": "^https://img.shields.io"
     }
   ],
   "ignoreDirs": [
