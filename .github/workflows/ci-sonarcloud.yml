@@ -43,9 +43,12 @@ jobs:
 
       - name: SonarCloud Scan
         if: matrix.node-version == '20.x' && github.event_name == 'push'
-        uses: SonarSource/sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        # Official action reads sonar-project.properties from repository root
+        # Generates coverage reports and runs quality gate
+        # See: docs/sonarcloud-integration.md
 
       - name: Upload test coverage (if coverage exists)
         if: matrix.node-version == '20.x'
