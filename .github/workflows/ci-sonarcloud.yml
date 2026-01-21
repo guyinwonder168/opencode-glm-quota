@@ -39,8 +39,7 @@ jobs:
 
       - name: Run tests with coverage
         if: matrix.node-version == '20.x'
-        run: |
-          npm test -- --experimental-test-coverage --test-coverage-threshold=85 --test-coverage-reporters=lcov
+        run: npm run test:coverage
 
       - name: SonarCloud Scan
         if: matrix.node-version == '20.x' && github.event_name == 'push'
