@@ -16,6 +16,7 @@ import { getEndpoints } from "./api/endpoints.js";
 import { queryEndpoint } from "./api/client.js";
 import { getTimeWindow, getTimeWindowQueryParams } from "./utils/time-window.js";
 import { formatProgressLine } from "./utils/progress-bar.js";
+import { formatTimeUntilReset } from "./utils/reset-timer.js";
 
 // ============================================================================
 // CONSTANTS
@@ -51,6 +52,7 @@ interface QuotaLimitItem {
   currentValue?: number;
   total?: number;
   usageDetails?: Record<string, unknown>;
+  nextResetTime?: number; // Unix timestamp in milliseconds
 }
 
 /**
@@ -169,19 +171,20 @@ For development/testing, you can also set environment variables:
  */
 function processQuotaLimit(data: Record<string, unknown>): ProcessedQuotaLimit {
   const result = { ...data };
-  
+
   if (result.limits && Array.isArray(result.limits)) {
     result.limits = result.limits.map((item: unknown) => {
       if (typeof item === 'object' && item !== null) {
         const limit = item as Record<string, unknown>;
-        
+
         if (limit.type === 'TOKENS_LIMIT') {
           return {
             type: 'Token usage(5 Hour)',
-            percentage: typeof limit.percentage === 'number' ? limit.percentage : 0
+            percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
+            nextResetTime: limit.nextResetTime as number | undefined
           };
         }
-        
+
         if (limit.type === 'TIME_LIMIT') {
           return {
             type: 'MCP usage(1 Month)',
@@ -195,7 +198,7 @@ function processQuotaLimit(data: Record<string, unknown>): ProcessedQuotaLimit {
       return item;
     });
   }
-  
+
   return result as ProcessedQuotaLimit;
 }
 
@@ -340,13 +343,21 @@ function formatOutput(
   // Quota Limits
   lines.push('║  📊 QUOTA LIMITS' + ' '.repeat(LINE_CONTENT - 14) + '║');
   lines.push('╟' + '─'.repeat(58) + '╢');
-  
+
   if (quotaData?.limits && Array.isArray(quotaData.limits)) {
     for (const limit of quotaData.limits) {
       const pct = typeof limit.percentage === 'number' ? limit.percentage : 0;
       const line = formatProgressLine(limit.type || 'Unknown', pct);
       lines.push('║  ' + line.padEnd(LINE_INDENT) + '║');
-      
+
+      // Display reset countdown if available
+      if (limit.nextResetTime !== undefined) {
+        const resetMsg = formatTimeUntilReset(limit.nextResetTime);
+        if (resetMsg) {
+          lines.push('║  ' + resetMsg.padEnd(LINE_INDENT) + '║');
+        }
+      }
+
       if (limit.currentValue !== undefined && limit.total !== undefined) {
         const usageStr = '       Used: ' + limit.currentValue + '/' + limit.total;
         lines.push('║  ' + usageStr.padEnd(LINE_INDENT) + '║');
