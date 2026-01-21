@@ -15,7 +15,7 @@ export function formatTimeUntilReset(resetTime: number | null | undefined): stri
   }
 
   // Check if valid number
-  if (typeof resetTime !== 'number' || isNaN(resetTime) || resetTime < 0) {
+  if (typeof resetTime !== 'number' || Number.isNaN(resetTime) || resetTime < 0) {
     return '';
   }
 
