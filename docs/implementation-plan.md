@@ -17,10 +17,12 @@
 | Slice 2: Time Window & Utility Functions | ✅ **COMPLETE** | 2026-01-18 | 37 | N/A |
 | Slice 3: Single Endpoint Query | ✅ **COMPLETE** | 2026-01-18 | - | - |
 | Slice 4: Multiple Endpoints & Display | ✅ **COMPLETE** | 2026-01-18 | - | - |
+| Slice 4.5: Add Next Reset Time | ✅ **COMPLETE** | 2026-01-21 | 13 | N/A |
+| Slice 4.6: Global Installation & Setup Command | ⏳ **TODO** | - | - | - |
 | Slice 5: Error Handling & Edge Cases | ⏳ **TODO** | - | - | - |
 | Slice 6: Refactoring & Optimization | ⏳ **TODO** | - | - | - |
 
-**Overall Progress:** 6/7 slices complete (85.7%)
+**Overall Progress:** 7/8 slices complete (87.5%)
 
 ---
 
@@ -289,6 +291,141 @@ Each slice MUST:
 - `tests/fixtures/api-tool-success.json`
 
 **Dependencies:** Slice 3 (single endpoint working)
+
+---
+
+### SLICE 4.5: Add Next Reset Time ✅ **COMPLETE**
+
+**User Value:** Users see accurate countdown timers showing when their 5-hour token quota will reset, enabling better usage planning.
+
+**Status:** ✅ COMPLETED (2026-01-21)
+**Priority:** Medium (enhancement to existing display)
+
+**Acceptance Criteria:**
+- [x] `nextResetTime` field from API response is parsed and processed
+- [x] `formatTimeUntilReset()` utility function converts Unix timestamps to human-readable countdowns
+- [x] Reset countdown displayed in quota output: "Resets in X hours Y minutes"
+- [x] Countdown updates based on current time vs reset timestamp
+- [x] Graceful handling when reset time is not available (fallback to existing display)
+- [x] Tests for reset time formatting and display logic
+- [x] Integration tests verify reset countdown appears in output
+
+**User Value Delivered:**
+- **Before:** Users see static quota percentages without knowing when reset occurs
+- **After:** Users see "Resets in 4 hours 42 minutes" enabling better usage planning
+
+**Technical Implementation:**
+- Parse `nextResetTime` field from `/quota/limit` API response (Unix timestamp in milliseconds)
+- Add `formatTimeUntilReset()` function to convert timestamps to human-readable format
+- Update display logic to include reset countdown when available
+- Handle edge cases (reset time in past, invalid timestamps)
+
+**Files Created/Modified:**
+- `src/utils/reset-timer.ts` - Reset time formatting utility (NEW)
+- `src/index.ts` - Updated quota processing and display logic
+- `tests/functional/reset-timer.test.ts` - Tests for reset time formatting (NEW)
+- `tests/integration/reset-time-display.test.ts` - Integration tests for display (NEW)
+
+**Tests Created:**
+- ✅ 9 functional tests for `formatTimeUntilReset()` (null, undefined, past, edge cases)
+- ✅ 4 integration tests for reset time display in full output
+- ✅ Total: 13 new tests (100% pass rate)
+- ✅ Overall test count: 50 tests passing (37 existing + 13 new)
+
+**Dependencies:** Slice 4 (display logic working), API Validation (confirmed nextResetTime field exists)
+
+**Test Strategy:**
+- Unit tests for `formatTimeUntilReset()` function
+- Integration tests verifying reset countdown appears in full output
+- Mock API responses with different reset timestamps
+- Edge case testing (past timestamps, invalid data)
+
+**Quality Checks:**
+- ✅ TypeScript compiles without errors
+- ✅ ESLint passes
+- ✅ All 50 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Pure functions (no side effects)
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Constants use UPPER_SNAKE_CASE
+
+**Git Commit:** `17e300b` - "feat: add next reset time countdown display"
+
+**Branch:** `feature/slice-4.5-reset-time` (committed and pushed to remote)
+
+---
+
+### SLICE 4.6: Global Installation & Setup Command
+
+**User Value:** Users can install plugin via npm with automatic OpenCode configuration, enabling `/glm_quota` command to work after installation.
+
+**Status:** ⏳ **TODO**
+**Priority:** Medium (usability enhancement)
+**Estimated Time:** 1-2 days
+
+**Problem Statement:**
+Adding `"@opencode-glm-quota/plugin"` to `opencode.json` tells OpenCode to `npm install` plugin package, BUT:
+- ❌ Agent definition not copied to OpenCode config
+- ❌ Command file not copied to OpenCode config
+- ❌ Skill file not copied to OpenCode config
+
+These files must exist in `~/.config/opencode/` for `/glm_quota` to work.
+
+**Solution:**
+Package includes an installer command that copies `/integration/` files from npm package to user's OpenCode configuration directory. The installer merges agent configuration from `integration/opencode.jsonc` into `~/.config/opencode/opencode.json` using JSONC-safe parsing.
+
+**Installation Flow:**
+```
+1. User adds to opencode.json:
+   "plugins": ["@opencode-glm-quota/plugin"]
+
+2. OpenCode runs: npm install @opencode-glm-quota/plugin
+
+3. User runs installer: npx @opencode-glm-quota/plugin install
+
+4. Files copied:
+   - node_modules/@opencode-glm-quota/plugin/integration/command/glm_quota.md
+      → ~/.config/opencode/command/glm_quota.md
+   - node_modules/@opencode-glm-quota/plugin/integration/opencode.jsonc
+      → ~/.config/opencode/opencode.json (merged safely)
+   - node_modules/@opencode-glm-quota/plugin/integration/skill/glm-quota-skill.md
+      → ~/.config/opencode/skill/glm-quota-skill.md
+
+5. User restarts OpenCode, runs /glm_quota ✅
+```
+
+**Acceptance Criteria:**
+- [ ] `package.json` includes `integration/` in `files` field
+- [ ] `package.json` includes bin entry for install command
+- [ ] `bin/install.js` copies files from npm package to OpenCode config
+- [ ] Installer merges `opencode.jsonc` into existing config using JSONC parser
+- [ ] Manual `npx @opencode-glm-quota/plugin install` works for user control
+- [ ] `npx @opencode-glm-quota/plugin install --force` overwrites existing
+- [ ] Documentation updated with installation instructions
+
+**Files to Create:**
+- `integration/opencode.jsonc` - Agent configuration (JSONC)
+- `bin/install.js` - Installer command executable
+
+**Files to Move:**
+- `.opencode/command/glm_quota.md` → `integration/command/glm_quota.md`
+- `.opencode/opencode.json` → `integration/opencode.jsonc`
+- `.opencode/skill/glm-quota-skill.md` → `integration/skill/glm-quota-skill.md`
+- `scripts/query-usage.mjs` → `src/query-usage.ts`
+
+**Files to Modify:**
+- `package.json` - Add bin entry, `jsonc-parser` dependency, include `integration/` in files
+
+**Dependencies:** Slice 1.5 (OpenCode command/skill files already exist)
+
+**Test Strategy:**
+- Manual testing of installer command
+- Verification of file copying to correct locations
+- Testing of config merging (existing config + new agent definition)
+- Test of `--force` flag behavior
+- Validation of OpenCode command discovery after installation
+
+**Git Commit:** `feat: add global installation and setup command`
 
 ---
 
@@ -820,6 +957,73 @@ Slice 2 (Utils) ───┘                                  │
 ---
 
 ## 11. Recent Updates
+
+### 2026-01-21: Slice 4.5 - Next Reset Time ✅ **COMPLETE**
+
+**Implemented:**
+- ✅ `formatTimeUntilReset()` - Converts Unix timestamps to human-readable countdowns
+- ✅ Enhanced `QuotaLimitItem` interface - Added `nextResetTime?: number` field
+- ✅ Updated `processQuotaLimit()` - Preserves `nextResetTime` from TOKENS_LIMIT API responses
+- ✅ Modified `formatOutput()` - Displays "Resets in X hours Y minutes" when available
+- ✅ Added graceful fallback - Empty string when reset time unavailable or past
+
+**How It Works:**
+1. `/quota/limit` API response includes `nextResetTime` (Unix timestamp in milliseconds)
+2. Plugin parses timestamp and calculates difference from current time
+3. `formatTimeUntilReset()` converts to "X hours Y minutes" format
+4. Countdown displayed under quota limits when available
+5. Empty string returned for null/undefined/past timestamps
+
+**Files Created:**
+- ✅ `src/utils/reset-timer.ts` - Reset time formatting utility (46 lines)
+- ✅ `tests/functional/reset-timer.test.ts` - 9 functional tests
+- ✅ `tests/integration/reset-time-display.test.ts` - 4 integration tests
+
+**Files Modified:**
+- ✅ `src/index.ts` - Added reset countdown display logic
+  - Imported `formatTimeUntilReset` utility
+  - Updated `QuotaLimitItem` interface with `nextResetTime?: number`
+  - Modified `processQuotaLimit()` to preserve reset timestamp
+  - Enhanced `formatOutput()` to display countdown under quota limits
+
+**Test Results:**
+- ✅ 9 functional tests: null/undefined handling, past timestamps, edge cases
+- ✅ 4 integration tests: quota data processing, fallback behavior
+- ✅ Total: 13 new tests (100% pass rate)
+- ✅ Overall: 50 tests passing (37 existing + 13 new)
+
+**Test Coverage:**
+- ✅ Reset timestamp parsing from API response
+- ✅ Countdown formatting (hours, minutes, zero values)
+- ✅ Edge cases: null, undefined, past timestamps, invalid values
+- ✅ Integration: Reset countdown appears in full output
+- ✅ Fallback: Empty string when reset time unavailable
+
+**Quality Checks:**
+- ✅ TypeScript compiles without errors
+- ✅ ESLint passes
+- ✅ All 50 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Pure functions (no side effects)
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Constants use UPPER_SNAKE_CASE
+
+**User Value:**
+- **Before:** Static quota percentages only, no timing information
+- **After:** Dynamic "Resets in X hours Y minutes" countdown
+- **Benefit:** Users can plan GLM usage within 5-hour quota windows
+
+**Git Commit:** `17e300b` - "feat: add next reset time countdown display"
+
+**Branch:** `feature/slice-4.5-reset-time` (committed and pushed to remote)
+
+**Next Steps:**
+1. Update documentation to reflect Slice 4.5 completion
+2. Proceed to Slice 4.6: Global Installation & Setup Command
+3. Create integration files for npm package
+4. Implement installer command for automatic OpenCode configuration
+
+---
 
 ### 2026-01-18: Slice 1.5 Completion ✅
 

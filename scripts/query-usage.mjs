@@ -174,6 +174,42 @@ function queryUsage(apiUrl, authToken, queryParams) {
 }
 
 // ============================================================================
+// DATA TRANSFORMATION
+// ============================================================================
+
+/**
+ * Transform quota limit items to display format
+ * @param {Object} quotaData - Raw quota data from API
+ * @returns {Object} Transformed quota data
+ */
+function processQuotaData(quotaData) {
+  if (!quotaData.limits || !Array.isArray(quotaData.limits)) {
+    return quotaData;
+  }
+
+  quotaData.limits = quotaData.limits.map((item) => {
+    if (item.type === 'TOKENS_LIMIT') {
+      return {
+        type: 'Token usage(5 Hour)',
+        percentage: item.percentage
+      };
+    }
+    if (item.type === 'TIME_LIMIT') {
+      return {
+        type: 'MCP usage(1 Month)',
+        percentage: item.percentage,
+        currentUsage: item.currentValue,
+        total: item.usage,
+        usageDetails: item.usageDetails
+      };
+    }
+    return item;
+  });
+
+  return quotaData;
+}
+
+// ============================================================================
 // MAIN
 // ============================================================================
 
@@ -224,38 +260,20 @@ console.log('');
 
 async function run() {
   try {
+    // Query and display model usage
     console.log('Model usage data:');
     console.log(await queryUsage(endpoints.modelUsage, token, queryParams));
-    
+
+    // Query and display tool usage
     console.log('Tool usage data:');
     console.log(await queryUsage(endpoints.toolUsage, token, queryParams));
-    
+
+    // Query and display quota limit
     console.log('Quota limit data:');
     const quotaResponse = await queryUsage(endpoints.quotaLimit, token);
-    
-    // Process quota limit
     const quotaData = JSON.parse(quotaResponse);
-    if (quotaData.limits && Array.isArray(quotaData.limits)) {
-      quotaData.limits = quotaData.limits.map((item) => {
-        if (item.type === 'TOKENS_LIMIT') {
-          return {
-            type: 'Token usage(5 Hour)',
-            percentage: item.percentage
-          };
-        }
-        if (item.type === 'TIME_LIMIT') {
-          return {
-            type: 'MCP usage(1 Month)',
-            percentage: item.percentage,
-            currentUsage: item.currentValue,
-            total: item.usage,
-            usageDetails: item.usageDetails
-          };
-        }
-        return item;
-      });
-    }
-    console.log(JSON.stringify(quotaData, null, 2));
+    const processedQuotaData = processQuotaData(quotaData);
+    console.log(JSON.stringify(processedQuotaData, null, 2));
   } catch (error) {
     console.error('Request failed:', error.message);
     process.exit(1);

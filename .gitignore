@@ -149,3 +149,4 @@ temp/
 !.opencode/skill/glm-quota-skill.md
 !.opencode/opencode.json
 !.opencode/plugin/glm-quota.ts
+!.opencode/workflows/
