@@ -43,7 +43,7 @@ jobs:
 
       - name: SonarCloud Scan
         if: matrix.node-version == '20.x' && github.event_name == 'push'
-        uses: sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-quality-gate-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
