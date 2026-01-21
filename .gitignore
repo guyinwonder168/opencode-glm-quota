@@ -117,6 +117,7 @@ temp/
 *.session.json
 
 # OpenCode - keep only our plugin files, ignore the rest
+.opencode/workflows/*.md
 .opencode/_lib/
 .opencode/agent/
 .opencode/bun.lock
