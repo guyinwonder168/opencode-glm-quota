@@ -42,7 +42,7 @@ jobs:
         run: npm run test:coverage
 
       - name: SonarCloud Scan
-        if: matrix.node-version == '20.x' && github.event_name == 'push'
+        if: matrix.node-version == '20.x'
         uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
