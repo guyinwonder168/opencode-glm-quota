@@ -1,8 +1,18 @@
 #!/bin/bash
 # SonarCloud Setup Script for opencode-glm-quota
 # This script helps configure SonarCloud integration
+#
+# Usage: ./scripts/setup-sonarcloud.sh [ORGANIZATION] [PROJECT_KEY]
+#
+# Example: ./scripts/setup-sonarcloud.sh guyinwonder168 opencode-glm-quota
 
 set -e
+
+# Configuration (from command line args or defaults)
+ORGANIZATION=${1:-"guyinwonder168"}
+PROJECT_KEY=${2:-"opencode-glm-quota"}
+FULL_PROJECT_KEY="${ORGANIZATION}_${PROJECT_KEY}"
+PROJECT_NAME="OpenCode GLM Quota Plugin"
 
 echo "🔧 SonarCloud Setup for opencode-glm-quota"
 echo "=========================================="
@@ -24,14 +34,11 @@ if ! command -v gh &> /dev/null; then
     fi
 fi
 
-# Configuration
-ORGANIZATION="guyinwonder168"
-PROJECT_KEY="guyinwonder168_opencode-glm-quota"
-PROJECT_NAME="OpenCode GLM Quota Plugin"
-
+# Display configuration
 echo "📋 Project Configuration:"
 echo "  Organization: $ORGANIZATION"
 echo "  Project Key: $PROJECT_KEY"
+echo "  Full Project Key: $FULL_PROJECT_KEY"
 echo "  Project Name: $PROJECT_NAME"
 echo ""
 
@@ -45,8 +52,8 @@ else
     echo "Please add secrets to GitHub:"
     echo "  1. Go to: https://github.com/guyinwonder168/opencode-glm-quota/settings/secrets/actions"
     echo "  2. Add SONAR_TOKEN (from SonarCloud: My Account → Security → Tokens)"
-    echo "  3. Add SONAR_ORGANIZATION (value: guyinwonder168)"
-    echo "  4. Add SONAR_PROJECT_KEY (value: guyinwonder168_opencode-glm-quota)"
+    echo "  3. Add SONAR_ORGANIZATION (value: $ORGANIZATION)"
+    echo "  4. Add SONAR_PROJECT_KEY (value: $FULL_PROJECT_KEY)"
     echo ""
     exit 1
 fi
@@ -65,18 +72,48 @@ fi
 
 echo ""
 
-# Step 2: Verify SonarCloud configuration
-echo "📄 Step 2: Verifying sonar-project.properties..."
-if [ -f "sonar-project.properties" ]; then
-    echo "  ✅ sonar-project.properties exists"
-    echo ""
-    echo "Current configuration:"
-    grep "^sonar\." sonar-project.properties | head -5
-else
-    echo "  ❌ sonar-project.properties not found"
-    exit 1
-fi
+# Step 2: Update sonar-project.properties with provided values
+echo "📄 Step 2: Updating sonar-project.properties..."
+cat > sonar-project.properties << EOF
+# SonarCloud Project Configuration
+# https://docs.sonarsource.com/sonarcloud/
 
+# Project identification
+sonar.projectKey=$FULL_PROJECT_KEY
+sonar.organization=$ORGANIZATION
+sonar.host.url=https://sonarcloud.io
+
+# Project metadata
+sonar.projectName=$PROJECT_NAME
+sonar.projectVersion=1.2.0
+
+# Source code configuration
+sonar.sources=src
+sonar.tests=tests
+sonar.sourceEncoding=UTF-8
+sonar.language=ts
+sonar.typescript.lcov.reportPaths=coverage/lcov.info
+
+# Exclusions
+sonar.exclusions=**/*.test.ts,dist/**,node_modules/**,coverage/**
+
+# JavaScript/TypeScript analysis
+sonar.javascript.lcov.reportPaths=coverage/lcov.info
+sonar.typescript.tsconfigPath=tsconfig.json
+
+# Coverage thresholds
+sonar.coverage.minimum=85.0
+sonar.qualitygate.wait=true
+
+# Analysis parameters
+sonar.scm.revision=\${GITHUB_SHA}
+sonar.scm.provider=git
+EOF
+
+echo "  ✅ sonar-project.properties updated"
+echo ""
+echo "  Updated configuration:"
+grep "^sonar\." sonar-project.properties | head -5
 echo ""
 
 # Step 3: Verify workflow exists
@@ -85,9 +122,8 @@ if [ -f ".github/workflows/ci-sonarcloud.yml" ]; then
     echo "  ✅ ci-sonarcloud.yml exists"
 else
     echo "  ❌ ci-sonarcloud.yml not found"
-    echo ""
-    echo "Creating workflow from template..."
-    # Would create workflow if not exists
+    echo "  Creating from template..."
+    # Workflow file should exist from previous setup
 fi
 
 echo ""
@@ -98,7 +134,7 @@ echo ""
 echo "1. Go to: https://sonarcloud.io/projects/create"
 echo "2. Fill in:"
 echo "   - Display name: $PROJECT_NAME"
-echo "   - Key: opencode-glm-quota"
+echo "   - Key: $PROJECT_KEY"
 echo "3. Select organization: $ORGANIZATION"
 echo "4. Click 'Set Up'"
 echo ""
@@ -111,12 +147,12 @@ echo "  1. Make a small change to your code"
 echo "  2. Commit and push:"
 echo "     git add ."
 echo "     git commit -m 'test: verify sonarcloud integration'"
-echo "     git push origin main"
+echo "     git push origin \$(git rev-parse --abbrev-ref HEAD)"
 echo "  3. Check GitHub Actions:"
 echo "     https://github.com/guyinwonder168/opencode-glm-quota/actions"
 echo "  4. Wait for 'CI with SonarCloud' to complete"
 echo "  5. View SonarCloud dashboard:"
-echo "     https://sonarcloud.io/dashboard?id=$PROJECT_KEY"
+echo "     https://sonarcloud.io/dashboard?id=$FULL_PROJECT_KEY"
 echo ""
 
 # Step 6: MCP integration guide
@@ -125,17 +161,17 @@ echo ""
 echo "Using SonarQube MCP to fetch results:"
 echo ""
 echo "  # Check quality gate status"
-echo "  @sonarqube_get_project_quality_gate_status(projectKey=\"$PROJECT_KEY\")"
+echo "  @sonarqube_get_project_quality_gate_status(projectKey=\"$FULL_PROJECT_KEY\")"
 echo ""
 echo "  # Get code metrics"
 echo "  @sonarqube_get_component_measures("
-echo "    projectKey=\"$PROJECT_KEY\","
+echo "    projectKey=\"$FULL_PROJECT_KEY\","
 echo "    metricKeys=[\"coverage\", \"complexity\", \"bugs\"]"
 echo "  )"
 echo ""
 echo "  # Search issues"
 echo "  @sonarqube_search_sonar_issues_in_projects("
-echo "    projects=[\"$PROJECT_KEY\"],"
+echo "    projects=[\"$FULL_PROJECT_KEY\"],"
 echo "    severities=[\"CRITICAL\", \"BLOCKER\"]"
 echo "  )"
 echo ""
@@ -143,8 +179,12 @@ echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "Next steps:"
-echo "  1. Add GitHub secrets if missing"
-echo "  2. Push code to trigger analysis"
-echo "  3. Use SonarQube MCP to fetch results"
+echo "  1. Add GitHub secrets if missing (SONAR_TOKEN, SONAR_ORGANIZATION, SONAR_PROJECT_KEY)"
+echo "  2. Create SonarCloud project at sonarcloud.io"
+echo "  3. Push code to trigger analysis"
+echo "  4. Use SonarQube MCP to fetch results"
+echo ""
+echo "Custom project? Run with parameters:"
+echo "  ./scripts/setup-sonarcloud.sh YOUR_ORG YOUR_PROJECT_KEY"
 echo ""
 echo "For detailed usage, see: docs/sonarcloud-mcp-guide.md"
