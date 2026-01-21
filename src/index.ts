@@ -216,7 +216,7 @@ function formatNumber(num: number): string {
 /**
  * Get token limit information from quota data
  */
-function getTokenLimitInfo(quotaData: ProcessedQuotaLimit | null) {
+function getTokenLimitInfo(quotaData: ProcessedQuotaLimit | null): { tokenLimit: number; tokenPct: number } {
   let tokenLimit = 40000000; // Default 40M
   let tokenPct = 0;
 
@@ -349,8 +349,6 @@ function formatBoxLine(content: string, lineIndent: number): string {
 function formatHeader(platformName: string, startTime: string, endTime: string): string[] {
   const lines: string[] = [];
   const LINE_WIDTH = 60;
-  const LINE_CONTENT = 58;
-  const LINE_INDENT = 56;
 
   lines.push('╔' + '═'.repeat(58) + '╗');
   lines.push('║' + ' '.repeat(58) + '║');
