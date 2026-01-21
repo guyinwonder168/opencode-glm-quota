@@ -33,19 +33,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Quality
 - ✅ TypeScript compiles without errors
-- ✅ ESLint passes
+- ✅ ESLint passes (0 errors, 0 warnings)
 - ✅ All 50 tests passing (100%)
 - ✅ Code follows AGENTS.md guidelines
 - ✅ Pure functions, no side effects
 - ✅ Type-safe with strict mode
+- ✅ SonarCloud quality gate passing
 
-### User Value
-- **Before**: Static quota percentages without timing information
-- **After**: Dynamic "Resets in X hours Y minutes" countdown
-- **Benefit**: Users can plan GLM usage within 5-hour quota windows
+### Fixed
+- Removed duplicate `formatHeader()` function (TypeScript compilation error)
+- Removed unused constants `LINE_CONTENT` and `LINE_INDENT` from formatHeader
+- Added explicit return type to `getTokenLimitInfo()` function
+- CI workflow now generates coverage reports (fixes missing artifact warning)
 
-### Git Commit
+### Git Commits
 - `17e300b` - "feat: add next reset time countdown display"
+- `95cae50` - "fix: resolve all SonarCloud and linting issues"
+- `fdace5a` - "ci: generate coverage reports in CI workflow"
 - Branch: `feature/slice-4.5-reset-time` (committed and pushed to remote)
 
 ---
