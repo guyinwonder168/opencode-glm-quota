@@ -1,8 +1,8 @@
 # OpenCode GLM Quota Plugin - Product Requirements Document
 
-**Version:** 8.2 (Final with Testing Strategy)  
-**Date:** January 13, 2026  
-**Status:** Ready for Implementation & Public Release  
+**Version:** 8.3 (with Slice 4.5 - Next Reset Time ✅)
+**Date:** January 21, 2026
+**Status:** Slice 4.5 Complete, Slice 4.6 Planned
 **Classification:** Technical Specification - Verified from Official Source
 
 **Package Name:** `opencode-glm-quota`  
@@ -15,6 +15,7 @@ This PRD specifies an OpenCode plugin that queries Z.ai GLM Coding Plan usage st
 ### Key Features
 
 - 📊 Query current quota limits (5-hour token cycle, monthly MCP usage)
+- ⏰ **Reset countdown display** - Shows when 5-hour token quota resets (NEW in v1.2.0 ✅)
 - 🤖 View model usage statistics (24-hour rolling window)
 - 🔧 View MCP tool usage (web_search, web_reader, etc.)
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
@@ -159,6 +160,123 @@ The plugin also supports Zhipu's development environment endpoint `https://dev.b
 This is automatically detected when using the `zhipu` provider ID with development credentials.
 
 **Note:** `dev.bigmodel.cn` endpoint follows the same API structure as production `open.bigmodel.cn`.
+
+### 1.9 Next Reset Time Display (ADDED - Slice 4.5 ✅)
+
+**Reset Timing Information:**
+
+The `/quota/limit` API response includes `nextResetTime` field providing Unix timestamp for 5-hour token quota resets.
+
+**Response Field:**
+```javascript
+{
+  "limits": [
+    {
+      "type": "TOKENS_LIMIT",
+      "percentage": 40.5,
+      "nextResetTime": 1737468000000  // Unix timestamp in milliseconds
+    }
+  ]
+}
+```
+
+**Implementation:**
+- Parse `nextResetTime` from TOKENS_LIMIT quota limit items
+- Calculate time difference: `nextResetTime - Date.now()`
+- Convert milliseconds to hours and minutes
+- Display: "Resets in X hours Y minutes"
+- Handle edge cases: null/undefined timestamps, past timestamps, invalid values
+
+**Display Integration:**
+```
+╠════════════════════════════════════════════════════════════╣
+║  📊 QUOTA LIMITS                                           ║
+╟────────────────────────────────────────────────────────────╢
+║  Token usage(5 Hour)   [████████████░░░░░░░░░░░░░░░░░░]  40.5% ║
+║  Resets in 4 hours 42 minutes                           ║
+║  MCP usage(1 Month)    [████░░░░░░░░░░░░░░░░░░░░░░░░░░]  12.3% ║
+```
+
+**User Value:**
+- **Before**: Static quota percentages without timing information
+- **After**: Dynamic countdown showing exact reset timing
+- **Benefit**: Better planning of GLM usage within 5-hour windows
+
+**Status:** ✅ COMPLETED (2026-01-21) - Slice 4.5 implementation complete with 13 new tests
+
+### 1.10 Global Installation & Setup (PLANNED - Slice 4.6 ⏳)
+
+**Problem Statement:**
+
+Adding plugin to `opencode.json` enables npm installation, but does NOT automatically configure OpenCode command/skill/agent files:
+
+```json
+// opencode.json
+{
+  "plugins": ["opencode-glm-quota"]
+}
+```
+
+This only handles:
+- ✅ `npm install opencode-glm-quota` (automatic via OpenCode)
+- ✅ Plugin code available in `node_modules/`
+
+But does NOT handle:
+- ❌ Agent definition copied to `~/.config/opencode/opencode.json`
+- ❌ Command file copied to `~/.config/opencode/command/glm_quota.md`
+- ❌ Skill file copied to `~/.config/opencode/skill/glm-quota-skill.md`
+
+**Solution: Installer Command**
+
+Package includes installer command that copies integration files to user's OpenCode config directory.
+
+**Installation Flow:**
+```
+1. User installs plugin:
+   npm install opencode-glm-quota
+
+2. OpenCode loads plugin from node_modules/
+
+3. User runs installer:
+   npx opencode-glm-quota install
+
+4. Files copied:
+   node_modules/opencode-glm-quota/integration/command/glm_quota.md
+      → ~/.config/opencode/command/glm_quota.md
+
+   node_modules/opencode-glm-quota/integration/opencode.jsonc
+      → ~/.config/opencode/opencode.json (merged safely)
+
+   node_modules/opencode-glm-quota/integration/skill/glm-quota-skill.md
+      → ~/.config/opencode/skill/glm-quota-skill.md
+
+5. User restarts OpenCode, /glm_quota command works ✅
+```
+
+**Installer Features:**
+- Copies integration files from npm package to OpenCode config directory
+- Merges `opencode.jsonc` into existing config using JSONC parser
+- `--force` flag overwrites existing files
+- `--dry-run` shows what would be copied without making changes
+- Graceful handling of existing configurations (safe merge, no clobbering)
+
+**Package Structure:**
+```
+opencode-glm-quota/
+├── package.json (with bin field)
+├── dist/
+│   └── index.js (compiled plugin)
+├── integration/
+│   ├── command/
+│   │   └── glm_quota.md
+│   ├── skill/
+│   │   └── glm-quota-skill.md
+│   └── opencode.jsonc (JSONC for comments)
+└── bin/
+    └── install.js (installer executable)
+```
+
+**Status:** ⏳ PLANNED - Slice 4.6 (not yet implemented)
 
 ---
 

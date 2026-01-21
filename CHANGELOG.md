@@ -4,6 +4,52 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] - 2026-01-21
+
+### Added
+- **Next Reset Time Countdown** - Dynamic reset timing display for quota management:
+  - `formatTimeUntilReset()` utility function for human-readable countdowns
+  - Enhanced `QuotaLimitItem` interface with `nextResetTime?: number` field
+  - Displays "Resets in X hours Y minutes" under quota limits when available
+  - Graceful fallback for missing or past reset timestamps
+  - Edge case handling: null, undefined, past timestamps, invalid values
+
+### Changed
+- Updated `processQuotaLimit()` to preserve `nextResetTime` from TOKENS_LIMIT API responses
+- Enhanced `formatOutput()` to display reset countdown under quota limits section
+- Improved user experience with dynamic timing information instead of static percentages
+
+### Technical
+- New utility module: `src/utils/reset-timer.ts` (46 lines)
+- Comprehensive test coverage: 13 new tests (9 functional + 4 integration)
+- Total test count: 50 tests passing (37 existing + 13 new)
+- All edge cases tested and passing (100% pass rate)
+
+### Files
+- `src/utils/reset-timer.ts` - Reset time formatting utility (NEW)
+- `tests/functional/reset-timer.test.ts` - 9 functional tests (NEW)
+- `tests/integration/reset-time-display.test.ts` - 4 integration tests (NEW)
+- `src/index.ts` - Updated with reset countdown logic
+
+### Quality
+- ✅ TypeScript compiles without errors
+- ✅ ESLint passes
+- ✅ All 50 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Pure functions, no side effects
+- ✅ Type-safe with strict mode
+
+### User Value
+- **Before**: Static quota percentages without timing information
+- **After**: Dynamic "Resets in X hours Y minutes" countdown
+- **Benefit**: Users can plan GLM usage within 5-hour quota windows
+
+### Git Commit
+- `17e300b` - "feat: add next reset time countdown display"
+- Branch: `feature/slice-4.5-reset-time` (committed and pushed to remote)
+
+---
+
 ## [1.1.0] - 2026-01-18
 
 ### Added
