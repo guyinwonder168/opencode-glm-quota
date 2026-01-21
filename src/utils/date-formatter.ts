@@ -24,17 +24,18 @@ export function formatDateTime(date: Date): string {
  * @returns Date object
  */
 export function parseDateTime(dateTime: string): Date {
-  const match = dateTime.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+  const dateTimeRegex = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+  const match = dateTimeRegex.exec(dateTime);
   if (!match) {
     throw new Error(`Invalid datetime format: ${dateTime}`);
   }
   const [, year, month, day, hours, minutes, seconds] = match;
   return new Date(
-    parseInt(year),
-    parseInt(month) - 1,
-    parseInt(day),
-    parseInt(hours),
-    parseInt(minutes),
-    parseInt(seconds)
+    Number.parseInt(year),
+    Number.parseInt(month) - 1,
+    Number.parseInt(day),
+    Number.parseInt(hours),
+    Number.parseInt(minutes),
+    Number.parseInt(seconds)
   );
 }

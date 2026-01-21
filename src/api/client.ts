@@ -3,7 +3,7 @@
  * Makes HTTPS requests to Z.ai API endpoints
  */
 
-import * as https from 'https';
+import * as https from 'node:https';
 import type { Endpoints } from './endpoints.js';
 
 /**
