@@ -21,10 +21,21 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 ### Option 1: npm (Recommended)
 
 ```bash
-npm install opencode-glm-quota
+# Install the plugin
+npm install @opencode-glm-quota/plugin
+
+# Run the installer to configure OpenCode
+npx @opencode-glm-quota/plugin install
+
+# Add to your OpenCode config (~/.config/opencode/opencode.json)
+echo '"@opencode-glm-quota/plugin"' >> ~/.config/opencode/opencode.json
 ```
 
-OpenCode automatically discovers and loads plugins from npm. No additional configuration required.
+**What the installer does:**
+- Copies `/glm_quota` command to `~/.config/opencode/command/glm_quota.md`
+- Copies skill documentation to `~/.config/opencode/skill/glm-quota-skill.md`
+- Merges agent configuration into `~/.config/opencode/opencode.json`
+- Supports `--force` flag to overwrite existing files
 
 ### Option 2: From GitHub
 
@@ -43,6 +54,9 @@ npm run build
 
 # Link for local testing
 npm link
+
+# Run the installer for local testing
+node bin/install.js
 ```
 
 ## Quick Start
@@ -222,9 +236,14 @@ src/
     date-formatter.ts   # Date/time formatting utilities
     progress-bar.ts     # ASCII progress bar rendering
     time-window.ts      # Rolling window calculation
+integration/
+  command/glm_quota.md          # /glm_quota slash command
+  skill/glm-quota-skill.md      # Skill documentation
+  opencode.jsonc                # Agent configuration (JSONC)
+bin/
+  install.js                     # Installation script
 dist/                   # Compiled JavaScript (generated)
 tests/                  # Test suite
-.opencode/              # OpenCode integration files
 package.json            # Dependencies and scripts
 tsconfig.json           # TypeScript configuration
 ```
