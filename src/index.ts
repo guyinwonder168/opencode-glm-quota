@@ -336,7 +336,112 @@ function formatToolUsage(
  * @returns Formatted line with box characters
  */
 function formatBoxLine(content: string, lineIndent: number): string {
-  return '║  ' + content.padEnd(lineIndent) + '║';
+  const trimmed = trimToDisplayWidth(content, lineIndent);
+  const padding = Math.max(lineIndent - getDisplayWidth(trimmed), 0);
+  return '║  ' + trimmed + ' '.repeat(padding) + '║';
+}
+
+function getDisplayWidth(text: string): number {
+  let width = 0;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const codePoint = text.codePointAt(i);
+    if (codePoint === undefined) {
+      continue;
+    }
+
+    if (codePoint > 0xffff) {
+      i += 1;
+    }
+
+    if (isControlCodePoint(codePoint) || isZeroWidthCodePoint(codePoint)) {
+      continue;
+    }
+
+    width += isEmojiCodePoint(codePoint) || isFullWidthCodePoint(codePoint) ? 2 : 1;
+  }
+
+  return width;
+}
+
+function trimToDisplayWidth(text: string, maxWidth: number): string {
+  let width = 0;
+  let result = '';
+
+  for (let i = 0; i < text.length; i += 1) {
+    const codePoint = text.codePointAt(i);
+    if (codePoint === undefined) {
+      continue;
+    }
+
+    if (codePoint > 0xffff) {
+      i += 1;
+    }
+
+    if (isControlCodePoint(codePoint) || isZeroWidthCodePoint(codePoint)) {
+      continue;
+    }
+
+    const charWidth = isEmojiCodePoint(codePoint) || isFullWidthCodePoint(codePoint) ? 2 : 1;
+    if (width + charWidth > maxWidth) {
+      break;
+    }
+
+    result += String.fromCodePoint(codePoint);
+    width += charWidth;
+  }
+
+  return result;
+}
+
+function isControlCodePoint(codePoint: number): boolean {
+  return codePoint <= 0x1f || (codePoint >= 0x7f && codePoint <= 0x9f);
+}
+
+function isZeroWidthCodePoint(codePoint: number): boolean {
+  return (
+    codePoint === 0x200d ||
+    codePoint === 0xfe0f ||
+    (codePoint >= 0xfe00 && codePoint <= 0xfe0f)
+  );
+}
+
+function isEmojiCodePoint(codePoint: number): boolean {
+  return (
+    (codePoint >= 0x1f300 && codePoint <= 0x1f5ff) ||
+    (codePoint >= 0x1f600 && codePoint <= 0x1f64f) ||
+    (codePoint >= 0x1f680 && codePoint <= 0x1f6ff) ||
+    (codePoint >= 0x1f700 && codePoint <= 0x1f77f) ||
+    (codePoint >= 0x1f780 && codePoint <= 0x1f7ff) ||
+    (codePoint >= 0x1f800 && codePoint <= 0x1f8ff) ||
+    (codePoint >= 0x1f900 && codePoint <= 0x1f9ff) ||
+    (codePoint >= 0x1fa00 && codePoint <= 0x1faff) ||
+    (codePoint >= 0x2600 && codePoint <= 0x26ff) ||
+    (codePoint >= 0x2700 && codePoint <= 0x27bf)
+  );
+}
+
+function isFullWidthCodePoint(codePoint: number): boolean {
+  return (
+    codePoint >= 0x1100 && (
+      codePoint <= 0x115f ||
+      codePoint === 0x2329 ||
+      codePoint === 0x232a ||
+      (codePoint >= 0x2e80 && codePoint <= 0x3247 && codePoint !== 0x303f) ||
+      (codePoint >= 0x3250 && codePoint <= 0x4dbf) ||
+      (codePoint >= 0x4e00 && codePoint <= 0xa4c6) ||
+      (codePoint >= 0xa960 && codePoint <= 0xa97c) ||
+      (codePoint >= 0xac00 && codePoint <= 0xd7a3) ||
+      (codePoint >= 0xf900 && codePoint <= 0xfaff) ||
+      (codePoint >= 0xfe10 && codePoint <= 0xfe19) ||
+      (codePoint >= 0xfe30 && codePoint <= 0xfe6b) ||
+      (codePoint >= 0xff01 && codePoint <= 0xff60) ||
+      (codePoint >= 0xffe0 && codePoint <= 0xffe6) ||
+      (codePoint >= 0x1b000 && codePoint <= 0x1b001) ||
+      (codePoint >= 0x1f200 && codePoint <= 0x1f251) ||
+      (codePoint >= 0x20000 && codePoint <= 0x3fffd)
+    )
+  );
 }
 
 /**
@@ -348,17 +453,17 @@ function formatBoxLine(content: string, lineIndent: number): string {
  */
 function formatHeader(platformName: string, startTime: string, endTime: string): string[] {
   const lines: string[] = [];
-  const LINE_WIDTH = 60;
+  const LINE_CONTENT = 58;
+  const LINE_INDENT = 56;
 
-  lines.push('╔' + '═'.repeat(58) + '╗');
-  lines.push('║' + ' '.repeat(58) + '║');
-  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(35).padEnd(58) + '║');
-  lines.push('║' + ' '.repeat(58) + '║');
-  lines.push('╠' + '═'.repeat(58) + '╣');
-  lines.push('║  Platform: ' + platformName.padEnd(LINE_WIDTH - 13 - 1) + '║');
-  const periodLine = '║  Period:   ' + startTime + ' → ' + endTime;
-  lines.push(periodLine.padEnd(LINE_WIDTH) + '║');
-  lines.push('╠' + '═'.repeat(58) + '╣');
+  lines.push('╔' + '═'.repeat(LINE_CONTENT) + '╗');
+  lines.push('║' + ' '.repeat(LINE_CONTENT) + '║');
+  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(35).padEnd(LINE_CONTENT) + '║');
+  lines.push('║' + ' '.repeat(LINE_CONTENT) + '║');
+  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
+  lines.push(formatBoxLine(`Platform: ${platformName}`, LINE_INDENT));
+  lines.push(formatBoxLine(`Period:   ${startTime} → ${endTime}`, LINE_INDENT));
+  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
 
   return lines;
 }
@@ -373,8 +478,8 @@ function formatQuotaLimits(quotaData: ProcessedQuotaLimit | null): string[] {
   const LINE_CONTENT = 58;
   const LINE_INDENT = 56;
 
-  lines.push('║  📊 QUOTA LIMITS' + ' '.repeat(LINE_CONTENT - 14) + '║');
-  lines.push('╟' + '─'.repeat(58) + '╢');
+  lines.push(formatBoxLine('QUOTA LIMITS', LINE_INDENT));
+  lines.push('╟' + '─'.repeat(LINE_CONTENT) + '╢');
 
   const limits = quotaData?.limits;
   if (limits && Array.isArray(limits)) {
@@ -396,10 +501,10 @@ function formatQuotaLimits(quotaData: ProcessedQuotaLimit | null): string[] {
       }
     }
   } else {
-    lines.push('║  No quota data available' + ' '.repeat(LINE_INDENT - 21) + '║');
+    lines.push(formatBoxLine('No quota data available', LINE_INDENT));
   }
 
-  lines.push('╠' + '═'.repeat(58) + '╣');
+  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
 
   return lines;
 }
@@ -424,8 +529,8 @@ function formatDataSection(
   const lines: string[] = [];
   const LINE_CONTENT = 58;
 
-  lines.push('║  ' + title + ' '.repeat(LINE_CONTENT - title.length) + '║');
-  lines.push('╟' + '─'.repeat(58) + '╢');
+  lines.push(formatBoxLine(title, LINE_INDENT));
+  lines.push('╟' + '─'.repeat(LINE_CONTENT) + '╢');
 
   if (data) {
     const formattedLines = formatter(data, quotaData);
@@ -433,10 +538,10 @@ function formatDataSection(
       lines.push(formatBoxLine(line, LINE_INDENT));
     }
   } else {
-    lines.push('║  ' + noDataMessage + ' '.repeat(LINE_INDENT - noDataMessage.length) + '║');
+    lines.push(formatBoxLine(noDataMessage, LINE_INDENT));
   }
 
-  lines.push('╠' + '═'.repeat(58) + '╣');
+  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
 
   return lines;
 }
@@ -474,7 +579,7 @@ function formatOutput(
   lines.push(...formatHeader(platformName, startTime, endTime));
   lines.push(...formatQuotaLimits(quotaData));
   lines.push(...formatDataSection(
-    '🤖 MODEL USAGE (24h)',
+    'MODEL USAGE (24h)',
     modelData,
     formatModelUsage,
     quotaData,
@@ -482,7 +587,7 @@ function formatOutput(
     LINE_INDENT
   ));
   lines.push(...formatDataSection(
-    '🔧 TOOL/MCP USAGE (24h)',
+    'TOOL/MCP USAGE (24h)',
     toolData,
     formatToolUsage,
     quotaData,

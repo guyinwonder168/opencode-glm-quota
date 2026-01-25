@@ -4,6 +4,14 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.3] - 2026-01-25
+
+### Fixed
+- **Box border alignment**: Display-width aware padding for emoji and wide characters
+- **Emoji header compatibility**: Removed emoji headers (📊, 🤖, 🔧) replaced with ASCII labels for consistent terminal rendering
+
+---
+
 ## [1.3.2] - 2026-01-25
 
 ### Added
