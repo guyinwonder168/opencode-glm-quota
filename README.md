@@ -225,7 +225,7 @@ npm run prepublishOnly
 
 ```
 src/
-  index.ts              # Main plugin entry point (463 lines)
+  index.ts              # Main plugin entry point
   api/
     client.ts           # HTTPS client with timeout and error handling
     endpoints.ts        # Platform-specific API endpoints
@@ -234,16 +234,16 @@ src/
     date-formatter.ts   # Date/time formatting utilities
     progress-bar.ts     # ASCII progress bar rendering
     time-window.ts      # Rolling window calculation
-integration/
-  command/glm_quota.md          # /glm_quota slash command
-  skill/glm-quota-skill.md      # Skill documentation
-  opencode.jsonc                # Agent configuration (JSONC)
-bin/
-  install.js                     # Installation script
-dist/                   # Compiled JavaScript (generated)
-tests/                  # Test suite
-package.json            # Dependencies and scripts
-tsconfig.json           # TypeScript configuration
+  integration/
+    command/glm_quota.md          # /glm_quota slash command
+    skills/glm-quota/SKILL.md      # Skill documentation
+    opencode.jsonc                # Agent configuration (JSONC)
+  bin/
+    install.js                     # Installation script
+  dist/                   # Compiled JavaScript (generated)
+  tests/                  # Test suite
+  package.json            # Dependencies and scripts
+  tsconfig.json           # TypeScript configuration
 ```
 
 ### Code Style Guidelines

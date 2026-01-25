@@ -22,26 +22,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Simplified installation: users can now run installer after npm install
 
 ### Technical
-- New installer: `bin/install.js` (199 lines, pure JavaScript)
+- New installer: `bin/install.js` (pure JavaScript)
 - Integration files shipped with npm package:
   - `integration/command/glm_quota.md`
-  - `integration/skill/glm-quota-skill.md`
+  - `integration/skills/glm-quota/SKILL.md` (plural directory, uppercase filename per OpenCode spec)
   - `integration/opencode.jsonc` (JSONC format with comments)
 - Deep merge utility for safe config merging
 - Error handling for permission, parse, and file operation errors
+- Skill directory follows OpenCode specification: `skills/<name>/SKILL.md`
+
+### Fixed
+- **Installation package name**: Fixed README.md and installer to use `opencode-glm-quota` instead of scoped `@opencode-glm-quota/plugin`
+- **Circular dependency**: Removed `opencode-glm-quota` from package.json dependencies (package was depending on itself)
+- **Bin command name**: Changed `opencode-glm-quota-install` to `opencode-glm-quota` in package.json
+- **Installer entry point**: Removed fragile condition, installer now always runs main() function
+- **Empty plugins array**: Fixed installer to only create the array being used (either `plugin` or `plugins`), not both
+- **Skill directory structure**: Renamed `integration/skill/` to `integration/skills/` (plural per OpenCode spec)
+- **Skill file naming**: Renamed `glm-quota-skill.md` to `skills/glm-quota/SKILL.md` (uppercase per spec)
+- **Manual config step**: Removed from README - installer now automatically adds plugin to config
+- **Documentation project structure**: Updated README.md to reflect correct directory layout
 
 ### Files
-- `integration/command/glm_quota.md` - Command definition (moved from .opencode/)
-- `integration/skill/glm-quota-skill.md` - Skill documentation (moved from .opencode/)
-- `integration/opencode.jsonc` - Agent configuration with comments (NEW, JSONC format)
-- `bin/install.js` - Installation script (NEW)
-- `package.json` - Updated with bin entry and jsonc-parser dependency
-
-### Documentation
-- README.md updated with installer usage instructions
-- CHANGELOG.md updated with version history
-
-### Quality
 - ✅ Installer tested successfully
 - ✅ Files copied to ~/.config/opencode/ correctly
 - ✅ Config merging preserves existing settings
