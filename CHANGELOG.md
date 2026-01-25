@@ -4,6 +4,15 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.1] - 2026-01-25
+
+### Fixed
+- **Installer crash on empty configs**: Initialize agent config before assigning glm-quota-exec to avoid postinstall failures
+- **Duplicate merge logic**: Removed redundant merge block that referenced an undefined variable
+- **Quota box alignment**: Narrowed progress bars to keep right border aligned in output table
+
+---
+
 ## [1.3.0] - 2026-01-22
 
 ### Added
