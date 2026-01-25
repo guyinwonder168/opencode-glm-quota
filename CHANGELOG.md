@@ -6,19 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [1.3.3] - 2026-01-25
 
+### Added
+- **Uninstall command**: `opencode-glm-quota uninstall` removes OpenCode integration files, plugin entry, and agent config
 ### Fixed
 - **Box border alignment**: Display-width aware padding for emoji and wide characters
 - **Emoji header compatibility**: Removed emoji headers (📊, 🤖, 🔧) replaced with ASCII labels for consistent terminal rendering
+### Changed
+- Uninstaller attempts `npm remove opencode-glm-quota` (supports `--global`)
 
 ---
 
-## [1.3.2] - 2026-01-25
+## [1.3.4] - 2026-01-26
 
-### Added
-- **Uninstall command**: `opencode-glm-quota uninstall` removes OpenCode integration files, plugin entry, and agent config
+### Fixed
+- **Progress bar width**: Reduced from 24 to 11 to create visible gap before right border
+- **2-space gap preservation**: Kept `formatProgressBoxLine()` to ensure consistent spacing before border
+- **ASCII bar rendering**: Confirmed ASCII bars (`█`, `░`) for terminal compatibility
 
-### Changed
-- Uninstaller attempts `npm remove opencode-glm-quota` (supports `--global`)
+### Fixed
+- **Box border alignment**: Display-width aware padding for emoji and wide characters
+- **Emoji header compatibility**: Removed emoji headers (📊, 🤖, 🔧) replaced with ASCII labels for consistent terminal rendering
 
 ---
 
