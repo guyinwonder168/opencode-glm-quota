@@ -186,6 +186,9 @@ function mergeConfig() {
 
   // REPLACE entire glm-quota-exec agent (not merge, to remove old redundant fields)
   if (newConfig.agent && newConfig.agent['glm-quota-exec']) {
+    if (!existingConfig.agent) {
+      existingConfig.agent = {}
+    }
     existingConfig.agent['glm-quota-exec'] = newConfig.agent['glm-quota-exec']
   } else if (!existingConfig.agent && newConfig.agent) {
     existingConfig.agent = newConfig.agent
