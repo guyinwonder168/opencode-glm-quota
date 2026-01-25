@@ -24,12 +24,12 @@ const __filename = decodeURIComponent(new URL(import.meta.url).pathname)
 const __dirname = path.dirname(__filename)
 const SOURCE_DIR = path.join(__dirname, '..', 'integration')
 const COMMAND_FILE = path.join(SOURCE_DIR, 'command', 'glm_quota.md')
-const SKILL_FILE = path.join(SOURCE_DIR, 'skill', 'glm-quota-skill.md')
+const SKILL_FILE = path.join(SOURCE_DIR, 'skills', 'glm-quota', 'SKILL.md')
 const AGENT_CONFIG = path.join(SOURCE_DIR, 'opencode.jsonc')
 
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'opencode')
 const TARGET_COMMAND = path.join(CONFIG_DIR, 'command', 'glm_quota.md')
-const TARGET_SKILL = path.join(CONFIG_DIR, 'skill', 'glm-quota-skill.md')
+const TARGET_SKILL = path.join(CONFIG_DIR, 'skills', 'glm-quota', 'SKILL.md')
 
 // Check which config file exists (opencode.json or opencode.jsonc)
 const TARGET_CONFIG_JSON = path.join(CONFIG_DIR, 'opencode.json')
@@ -144,14 +144,14 @@ function installCommand(force) {
  */
 function installSkill(force) {
   if (fileExists(TARGET_SKILL) && !force) {
-    if (!promptConfirm(`Skill file exists: ${TARGET_SKILL}\nOverwrite?`)) {
+    if (!promptConfirm(`Skill directory exists: ${path.dirname(TARGET_SKILL)}\nOverwrite?`)) {
       console.log(`  ⊘ Skipped ${TARGET_SKILL}`)
       return
     }
   }
 
   copyFile(SKILL_FILE, TARGET_SKILL)
-  console.log(`  ✓ Created ${TARGET_SKILL}`)
+  console.log(`  ✓ Created ${path.join(path.basename(path.dirname(TARGET_SKILL)), path.basename(TARGET_SKILL))}`)
 }
 
 /**

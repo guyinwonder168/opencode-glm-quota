@@ -33,7 +33,7 @@ echo '"opencode-glm-quota"' >> ~/.config/opencode/opencode.json
 
 **What the installer does:**
 - Copies `/glm_quota` command to `~/.config/opencode/command/glm_quota.md`
-- Copies skill documentation to `~/.config/opencode/skill/glm-quota-skill.md`
+- Copies skill documentation to `~/.config/opencode/skills/glm-quota/SKILL.md`
 - Merges agent configuration into `~/.config/opencode/opencode.json`
 - Supports `--force` flag to overwrite existing files
 
