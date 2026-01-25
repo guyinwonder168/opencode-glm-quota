@@ -9,11 +9,13 @@
  * Usage:
  *   node bin/install.js              # Interactive install (ask before overwriting)
  *   node bin/install.js --force      # Force overwrite existing files
+ *   node bin/install.js uninstall    # Remove integration files and config
  */
 
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { spawnSync } from 'child_process'
 import { parse as parseJsonc } from 'jsonc-parser'
 
 // ==========================================
@@ -70,6 +72,30 @@ function fileExists(filePath) {
 function copyFile(source, destination) {
   ensureDirectory(path.dirname(destination))
   fs.copyFileSync(source, destination)
+}
+
+/**
+ * Remove file if it exists
+ */
+function removeFile(filePath, label) {
+  if (fileExists(filePath)) {
+    fs.unlinkSync(filePath)
+    console.log(`  ✓ Removed ${label}`)
+  } else {
+    console.log(`  ⊙ Not found ${label}`)
+  }
+}
+
+/**
+ * Remove directory if it exists
+ */
+function removeDirectory(dirPath, label) {
+  if (fileExists(dirPath)) {
+    fs.rmSync(dirPath, { recursive: true, force: true })
+    console.log(`  ✓ Removed ${label}`)
+  } else {
+    console.log(`  ⊙ Not found ${label}`)
+  }
 }
 
 /**
@@ -208,6 +234,79 @@ function mergeConfig() {
   console.log(`  ✓ Merged configuration into ${path.basename(TARGET_CONFIG)}`)
 }
 
+/**
+ * Remove plugin configuration and agent configuration
+ */
+function removeConfig() {
+  if (!fileExists(TARGET_CONFIG)) {
+    console.log(`  ⊙ Config not found: ${TARGET_CONFIG}`)
+    return
+  }
+
+  const PLUGIN_NAME = 'opencode-glm-quota'
+  const existingConfig = parseConfig(TARGET_CONFIG)
+  let changed = false
+
+  if (Array.isArray(existingConfig.plugin)) {
+    const next = existingConfig.plugin.filter((name) => name !== PLUGIN_NAME)
+    if (next.length !== existingConfig.plugin.length) {
+      existingConfig.plugin = next
+      changed = true
+      console.log('  ✓ Removed plugin from plugin array')
+    }
+  }
+
+  if (Array.isArray(existingConfig.plugins)) {
+    const next = existingConfig.plugins.filter((name) => name !== PLUGIN_NAME)
+    if (next.length !== existingConfig.plugins.length) {
+      existingConfig.plugins = next
+      changed = true
+      console.log('  ✓ Removed plugin from plugins array')
+    }
+  }
+
+  if (existingConfig.agent && existingConfig.agent['glm-quota-exec']) {
+    delete existingConfig.agent['glm-quota-exec']
+    if (Object.keys(existingConfig.agent).length === 0) {
+      delete existingConfig.agent
+    }
+    changed = true
+    console.log('  ✓ Removed glm-quota-exec agent config')
+  }
+
+  if (changed) {
+    writeConfig(TARGET_CONFIG, existingConfig)
+    console.log(`  ✓ Updated ${path.basename(TARGET_CONFIG)}`)
+  } else {
+    console.log('  ⊙ No config changes needed')
+  }
+}
+
+/**
+ * Remove npm package
+ */
+function removePackage(globalFlag) {
+  const args = ['remove', 'opencode-glm-quota']
+  if (globalFlag) {
+    args.push('--global')
+  }
+
+  const result = spawnSync('npm', args, { stdio: 'inherit' })
+  if (result.status !== 0) {
+    console.log('  ⊙ npm remove failed, remove manually if needed')
+  }
+}
+
+/**
+ * Uninstall integration files and configuration
+ */
+function uninstall(globalFlag) {
+  removeFile(TARGET_COMMAND, TARGET_COMMAND)
+  removeDirectory(path.dirname(TARGET_SKILL), path.dirname(TARGET_SKILL))
+  removeConfig()
+  removePackage(globalFlag)
+}
+
 // ==========================================
 // MAIN INSTALLATION FUNCTION
 // ==========================================
@@ -219,7 +318,17 @@ function main() {
   try {
     // Parse command line arguments
     const args = process.argv.slice(2)
+    const isUninstall = args.includes('uninstall')
     const forceFlag = args.includes('--force')
+    const globalFlag = args.includes('--global') || args.includes('-g')
+
+    if (isUninstall) {
+      console.log('✓ Uninstalling GLM Quota Plugin...\n')
+      uninstall(globalFlag)
+      console.log()
+      console.log('✓ Uninstall complete!')
+      return
+    }
 
     console.log('✓ Installing GLM Quota Plugin...\n')
 

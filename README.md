@@ -35,6 +35,23 @@ npx opencode-glm-quota install
 - Merges agent configuration into `~/.config/opencode/opencode.json`
 - Supports `--force` flag to overwrite existing files
 
+### Uninstall
+
+```bash
+# Remove OpenCode integration files and config
+npx opencode-glm-quota uninstall
+
+# If installed globally
+npx opencode-glm-quota uninstall --global
+```
+
+**What the uninstaller does:**
+- Removes `/glm_quota` command
+- Deletes `skills/glm-quota/SKILL.md`
+- Removes plugin entry from OpenCode config
+- Removes `glm-quota-exec` agent config
+- Runs `npm remove opencode-glm-quota` (or `--global`)
+
 ### Option 2: From GitHub
 
 ```bash

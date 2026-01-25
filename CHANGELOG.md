@@ -4,6 +4,16 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.2] - 2026-01-25
+
+### Added
+- **Uninstall command**: `opencode-glm-quota uninstall` removes OpenCode integration files, plugin entry, and agent config
+
+### Changed
+- Uninstaller attempts `npm remove opencode-glm-quota` (supports `--global`)
+
+---
+
 ## [1.3.1] - 2026-01-25
 
 ### Fixed
