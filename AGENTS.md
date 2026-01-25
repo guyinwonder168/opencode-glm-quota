@@ -100,9 +100,24 @@ This badge updates automatically with each commit.
 ```
 src/
   index.ts           # Main plugin entry point
-dist/               # Compiled JavaScript (generated)
-package.json         # Dependencies and scripts
-tsconfig.json        # TypeScript configuration
+  api/
+    client.ts        # HTTPS client with timeout and error handling
+    endpoints.ts     # Platform-specific API endpoints
+    platforms.ts     # Platform detection and naming
+  utils/
+    date-formatter.ts # Date/time formatting utilities
+    progress-bar.ts   # ASCII progress bar rendering
+    time-window.ts    # Rolling window calculation
+  integration/
+    command/glm_quota.md         # /glm_quota slash command
+    skills/glm-quota/SKILL.md     # Skill documentation (OpenCode spec: skills/<name>/SKILL.md)
+    opencode.jsonc               # Agent configuration (JSONC)
+  bin/
+    install.js                    # Installation script
+  dist/                             # Compiled JavaScript (generated)
+  tests/                            # Test suite
+  package.json                       # Dependencies and scripts
+  tsconfig.json                      # TypeScript configuration
 ```
 
 ## Code Style Guidelines
@@ -382,6 +397,37 @@ Execute glm_quota tool.
 - ✅ Part of OpenCode command system
 
 **Plugin Context Received:**
+- `client`: OpenCode SDK client for logging, app context
+- `project`: Current project information
+- `directory`: Working directory
+- `worktree`: Git worktree path
+- `$`: Shell commands
+
+**Installation & Configuration**
+
+The package includes an automatic installer that configures OpenCode:
+
+```bash
+npm install opencode-glm-quota
+npx opencode-glm-quota install
+```
+
+**What installer does:**
+- Copies `/glm_quota` command to `~/.config/opencode/command/glm_quota.md`
+- Copies skill documentation to `~/.config/opencode/skills/glm-quota/SKILL.md` (OpenCode spec)
+- Automatically adds `opencode-glm-quota` to your OpenCode config's plugin array
+- Merges `glm-quota-exec` agent configuration into `~/.config/opencode/opencode.jsonc`
+- Supports `--force` flag to overwrite existing files
+
+**Installer fixes (v1.3.0):**
+- ✅ Package name: Uses `opencode-glm-quota` (not scoped `@opencode-glm-quota/plugin`)
+- ✅ Bin command: `opencode-glm-quota install` (not `opencode-glm-quota-install`)
+- ✅ Entry point: Removed fragile condition, always runs main() function
+- ✅ Config merging: Only creates the array being used (`plugin` or `plugins`), not both
+- ✅ Skill structure: Follows OpenCode spec (`skills/<name>/SKILL.md`)
+- ✅ No manual config: Users don't need to edit opencode.json manually
+
+**Key Differences from Standalone Scripts:**
 - `client`: OpenCode SDK client for logging, app context
 - `project`: Current project information
 - `directory`: Working directory
