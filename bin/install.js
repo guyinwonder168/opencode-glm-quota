@@ -167,21 +167,30 @@ function mergeConfig() {
   // Parse new agent config from integration
   const newConfig = parseConfig(AGENT_CONFIG)
 
-  // Merge agent definitions first
+  // Merge configs once to get a base object
   const mergedConfig = deepMerge(existingConfig, newConfig)
-  
+
   const PLUGIN_NAME = 'opencode-glm-quota'
-  
+
   // Handle both "plugin" array and "agent" section
   // Check for "plugin" array first (user's config uses this)
   const pluginArrayName = mergedConfig.plugin ? 'plugin' : 'plugins'
-  
+
   // Only ensure the array we're going to use exists, not both!
   if (!mergedConfig[pluginArrayName]) {
     mergedConfig[pluginArrayName] = []
   }
-  
+
   const plugins = Array.isArray(mergedConfig[pluginArrayName]) ? mergedConfig[pluginArrayName] : []
+
+  // REPLACE glm-quota-exec agent completely (to remove old redundant fields)
+  if (newConfig.agent) {
+    if (!mergedConfig.agent) {
+      mergedConfig.agent = newConfig.agent
+    } else if (newConfig.agent['glm-quota-exec']) {
+      mergedConfig.agent['glm-quota-exec'] = newConfig.agent['glm-quota-exec']
+    }
+  }
 
   // Only add if not already present
   if (!plugins.includes(PLUGIN_NAME)) {
@@ -192,7 +201,7 @@ function mergeConfig() {
     console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in ${pluginArrayName} array`)
   }
 
-  // Write merged config back to the same file (opencode.json or opencode.jsonc)
+  // Write merged config back to same file (opencode.json or opencode.jsonc)
   writeConfig(TARGET_CONFIG, mergedConfig)
   console.log(`  ✓ Merged configuration into ${path.basename(TARGET_CONFIG)}`)
 }
