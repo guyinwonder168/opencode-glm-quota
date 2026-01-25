@@ -4,6 +4,51 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.0] - 2026-01-22
+
+### Added
+- **Global Installation & Setup Command** - Automatic OpenCode configuration:
+  - `integration/` directory structure with command/, skill/, and opencode.jsonc
+  - `bin/install.js` installer script that copies files to `~/.config/opencode/`
+  - `npx @opencode-glm-quota/plugin install` command for easy setup
+  - Config merging: preserves existing user configuration while adding glm-quota-exec agent
+  - `--force` flag support for overwriting existing files
+  - jsonc-parser dependency for parsing JSON with comments
+
+### Changed
+- Moved integration files from `.opencode/` to `integration/` directory
+- Converted `opencode.json` to `opencode.jsonc` with helpful comments
+- Updated package.json with bin entry and integration/ in files array
+- Simplified installation: users can now run installer after npm install
+
+### Technical
+- New installer: `bin/install.js` (199 lines, pure JavaScript)
+- Integration files shipped with npm package:
+  - `integration/command/glm_quota.md`
+  - `integration/skill/glm-quota-skill.md`
+  - `integration/opencode.jsonc` (JSONC format with comments)
+- Deep merge utility for safe config merging
+- Error handling for permission, parse, and file operation errors
+
+### Files
+- `integration/command/glm_quota.md` - Command definition (moved from .opencode/)
+- `integration/skill/glm-quota-skill.md` - Skill documentation (moved from .opencode/)
+- `integration/opencode.jsonc` - Agent configuration with comments (NEW, JSONC format)
+- `bin/install.js` - Installation script (NEW)
+- `package.json` - Updated with bin entry and jsonc-parser dependency
+
+### Documentation
+- README.md updated with installer usage instructions
+- CHANGELOG.md updated with version history
+
+### Quality
+- ✅ Installer tested successfully
+- ✅ Files copied to ~/.config/opencode/ correctly
+- ✅ Config merging preserves existing settings
+- ✅ All files shipped with npm package
+
+---
+
 ## [1.2.0] - 2026-01-21
 
 ### Added
