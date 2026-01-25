@@ -162,47 +162,46 @@ function mergeConfig() {
   let existingConfig = {}
   if (fileExists(TARGET_CONFIG)) {
     existingConfig = parseConfig(TARGET_CONFIG)
+    // REMOVE old 'options' field to prevent verbose agent output
+    if (existingConfig.agent?.['glm-quota-exec']?.options) {
+      delete existingConfig.agent['glm-quota-exec'].options
+    }
   }
 
   // Parse new agent config from integration
   const newConfig = parseConfig(AGENT_CONFIG)
 
-  // Merge configs once to get a base object
-  const mergedConfig = deepMerge(existingConfig, newConfig)
-
   const PLUGIN_NAME = 'opencode-glm-quota'
 
   // Handle both "plugin" array and "agent" section
   // Check for "plugin" array first (user's config uses this)
-  const pluginArrayName = mergedConfig.plugin ? 'plugin' : 'plugins'
+  const pluginArrayName = existingConfig.plugin ? 'plugin' : 'plugins'
 
-  // Only ensure the array we're going to use exists, not both!
-  if (!mergedConfig[pluginArrayName]) {
-    mergedConfig[pluginArrayName] = []
+  // Only ensure that array we're going to use exists, not both!
+  if (!existingConfig[pluginArrayName]) {
+    existingConfig[pluginArrayName] = []
   }
 
-  const plugins = Array.isArray(mergedConfig[pluginArrayName]) ? mergedConfig[pluginArrayName] : []
+  const plugins = Array.isArray(existingConfig[pluginArrayName]) ? existingConfig[pluginArrayName] : []
 
-  // REPLACE glm-quota-exec agent completely (to remove old redundant fields)
-  if (newConfig.agent) {
-    if (!mergedConfig.agent) {
-      mergedConfig.agent = newConfig.agent
-    } else if (newConfig.agent['glm-quota-exec']) {
-      mergedConfig.agent['glm-quota-exec'] = newConfig.agent['glm-quota-exec']
-    }
+  // REPLACE entire glm-quota-exec agent (not merge, to remove old redundant fields)
+  if (newConfig.agent && newConfig.agent['glm-quota-exec']) {
+    existingConfig.agent['glm-quota-exec'] = newConfig.agent['glm-quota-exec']
+  } else if (!existingConfig.agent && newConfig.agent) {
+    existingConfig.agent = newConfig.agent
   }
 
   // Only add if not already present
   if (!plugins.includes(PLUGIN_NAME)) {
     plugins.push(PLUGIN_NAME)
-    mergedConfig[pluginArrayName] = plugins
+    existingConfig[pluginArrayName] = plugins
     console.log(`  ✓ Added ${PLUGIN_NAME} to ${pluginArrayName} array`)
   } else {
     console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in ${pluginArrayName} array`)
   }
 
   // Write merged config back to same file (opencode.json or opencode.jsonc)
-  writeConfig(TARGET_CONFIG, mergedConfig)
+  writeConfig(TARGET_CONFIG, existingConfig)
   console.log(`  ✓ Merged configuration into ${path.basename(TARGET_CONFIG)}`)
 }
 

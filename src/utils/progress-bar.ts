@@ -59,9 +59,9 @@ export function formatProgressLine(
   label: string,
   percentage: number
 ): string {
-  const bar = createProgressBar(percentage);
+  const bar = createProgressBar(percentage, { width: 26 });
   const pctStr = formatPercentage(percentage).padStart(6);
-  const labelStr = label.padEnd(20);
-  
+  const labelStr = label.slice(0, 20).padEnd(20);
+
   return `${labelStr} [${bar}] ${pctStr}`;
 }
