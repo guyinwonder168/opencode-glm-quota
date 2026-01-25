@@ -21,14 +21,14 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 ### Option 1: npm (Recommended)
 
 ```bash
-# Install the plugin
-npm install @opencode-glm-quota/plugin
+# Install plugin
+npm install opencode-glm-quota
 
-# Run the installer to configure OpenCode
-npx @opencode-glm-quota/plugin install
+# Run installer to configure OpenCode
+npx opencode-glm-quota install
 
 # Add to your OpenCode config (~/.config/opencode/opencode.json)
-echo '"@opencode-glm-quota/plugin"' >> ~/.config/opencode/opencode.json
+echo '"opencode-glm-quota"' >> ~/.config/opencode/opencode.json
 ```
 
 **What the installer does:**
