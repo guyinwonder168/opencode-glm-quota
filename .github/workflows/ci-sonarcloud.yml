@@ -43,7 +43,7 @@ jobs:
 
       - name: SonarCloud Scan
         if: matrix.node-version == '20.x'
-        uses: SonarSource/sonarqube-scan-action@master
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         # Official action reads sonar-project.properties from repository root
@@ -60,7 +60,7 @@ jobs:
 
       - name: Comment SonarCloud results on PR
         if: matrix.node-version == '20.x' && github.event_name == 'pull_request'
-        uses: SonarSource/sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-quality-gate-action@cb3ed20f9fec62b4c3b8ad9e77656c6adaade913
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
