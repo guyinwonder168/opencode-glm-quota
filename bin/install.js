@@ -24,12 +24,12 @@ const __filename = decodeURIComponent(new URL(import.meta.url).pathname)
 const __dirname = path.dirname(__filename)
 const SOURCE_DIR = path.join(__dirname, '..', 'integration')
 const COMMAND_FILE = path.join(SOURCE_DIR, 'command', 'glm_quota.md')
-const SKILL_FILE = path.join(SOURCE_DIR, 'skill', 'glm-quota-skill.md')
+const SKILL_FILE = path.join(SOURCE_DIR, 'skills', 'glm-quota', 'SKILL.md')
 const AGENT_CONFIG = path.join(SOURCE_DIR, 'opencode.jsonc')
 
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'opencode')
 const TARGET_COMMAND = path.join(CONFIG_DIR, 'command', 'glm_quota.md')
-const TARGET_SKILL = path.join(CONFIG_DIR, 'skill', 'glm-quota-skill.md')
+const TARGET_SKILL = path.join(CONFIG_DIR, 'skills', 'glm-quota', 'SKILL.md')
 
 // Check which config file exists (opencode.json or opencode.jsonc)
 const TARGET_CONFIG_JSON = path.join(CONFIG_DIR, 'opencode.json')
@@ -144,14 +144,14 @@ function installCommand(force) {
  */
 function installSkill(force) {
   if (fileExists(TARGET_SKILL) && !force) {
-    if (!promptConfirm(`Skill file exists: ${TARGET_SKILL}\nOverwrite?`)) {
+    if (!promptConfirm(`Skill directory exists: ${path.dirname(TARGET_SKILL)}\nOverwrite?`)) {
       console.log(`  ⊘ Skipped ${TARGET_SKILL}`)
       return
     }
   }
 
   copyFile(SKILL_FILE, TARGET_SKILL)
-  console.log(`  ✓ Created ${TARGET_SKILL}`)
+  console.log(`  ✓ Created ${path.join(path.basename(path.dirname(TARGET_SKILL)), path.basename(TARGET_SKILL))}`)
 }
 
 /**
@@ -162,33 +162,49 @@ function mergeConfig() {
   let existingConfig = {}
   if (fileExists(TARGET_CONFIG)) {
     existingConfig = parseConfig(TARGET_CONFIG)
+    // REMOVE old 'options' field to prevent verbose agent output
+    if (existingConfig.agent?.['glm-quota-exec']?.options) {
+      delete existingConfig.agent['glm-quota-exec'].options
+    }
   }
 
   // Parse new agent config from integration
   const newConfig = parseConfig(AGENT_CONFIG)
 
-  // Merge agent definitions first
-  const mergedConfig = deepMerge(existingConfig, newConfig)
+  const PLUGIN_NAME = 'opencode-glm-quota'
 
-  // Ensure plugins array exists and add our plugin
-  if (!mergedConfig.plugins) {
-    mergedConfig.plugins = []
+  // Handle both "plugin" array and "agent" section
+  // Check for "plugin" array first (user's config uses this)
+  const pluginArrayName = existingConfig.plugin ? 'plugin' : 'plugins'
+
+  // Only ensure that array we're going to use exists, not both!
+  if (!existingConfig[pluginArrayName]) {
+    existingConfig[pluginArrayName] = []
   }
 
-  const PLUGIN_NAME = '@opencode-glm-quota/plugin'
-  const plugins = Array.isArray(mergedConfig.plugins) ? mergedConfig.plugins : []
+  const plugins = Array.isArray(existingConfig[pluginArrayName]) ? existingConfig[pluginArrayName] : []
+
+  // REPLACE entire glm-quota-exec agent (not merge, to remove old redundant fields)
+  if (newConfig.agent && newConfig.agent['glm-quota-exec']) {
+    if (!existingConfig.agent) {
+      existingConfig.agent = {}
+    }
+    existingConfig.agent['glm-quota-exec'] = newConfig.agent['glm-quota-exec']
+  } else if (!existingConfig.agent && newConfig.agent) {
+    existingConfig.agent = newConfig.agent
+  }
 
   // Only add if not already present
   if (!plugins.includes(PLUGIN_NAME)) {
     plugins.push(PLUGIN_NAME)
-    mergedConfig.plugins = plugins
-    console.log(`  ✓ Added ${PLUGIN_NAME} to plugins array`)
+    existingConfig[pluginArrayName] = plugins
+    console.log(`  ✓ Added ${PLUGIN_NAME} to ${pluginArrayName} array`)
   } else {
-    console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in plugins array`)
+    console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in ${pluginArrayName} array`)
   }
 
-  // Write merged config back to the same file (opencode.json or opencode.jsonc)
-  writeConfig(TARGET_CONFIG, mergedConfig)
+  // Write merged config back to same file (opencode.json or opencode.jsonc)
+  writeConfig(TARGET_CONFIG, existingConfig)
   console.log(`  ✓ Merged configuration into ${path.basename(TARGET_CONFIG)}`)
 }
 
@@ -224,6 +240,4 @@ function main() {
 }
 
 // Run installer
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main()
-}
+main()

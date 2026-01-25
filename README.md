@@ -21,19 +21,17 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 ### Option 1: npm (Recommended)
 
 ```bash
-# Install the plugin
-npm install @opencode-glm-quota/plugin
+# Install plugin
+npm install opencode-glm-quota
 
-# Run the installer to configure OpenCode
-npx @opencode-glm-quota/plugin install
-
-# Add to your OpenCode config (~/.config/opencode/opencode.json)
-echo '"@opencode-glm-quota/plugin"' >> ~/.config/opencode/opencode.json
+# Run installer to configure OpenCode
+npx opencode-glm-quota install
 ```
 
 **What the installer does:**
 - Copies `/glm_quota` command to `~/.config/opencode/command/glm_quota.md`
-- Copies skill documentation to `~/.config/opencode/skill/glm-quota-skill.md`
+- Copies skill documentation to `~/.config/opencode/skills/glm-quota/SKILL.md`
+- Automatically adds plugin to your OpenCode config
 - Merges agent configuration into `~/.config/opencode/opencode.json`
 - Supports `--force` flag to overwrite existing files
 
@@ -227,7 +225,7 @@ npm run prepublishOnly
 
 ```
 src/
-  index.ts              # Main plugin entry point (463 lines)
+  index.ts              # Main plugin entry point
   api/
     client.ts           # HTTPS client with timeout and error handling
     endpoints.ts        # Platform-specific API endpoints
@@ -236,16 +234,16 @@ src/
     date-formatter.ts   # Date/time formatting utilities
     progress-bar.ts     # ASCII progress bar rendering
     time-window.ts      # Rolling window calculation
-integration/
-  command/glm_quota.md          # /glm_quota slash command
-  skill/glm-quota-skill.md      # Skill documentation
-  opencode.jsonc                # Agent configuration (JSONC)
-bin/
-  install.js                     # Installation script
-dist/                   # Compiled JavaScript (generated)
-tests/                  # Test suite
-package.json            # Dependencies and scripts
-tsconfig.json           # TypeScript configuration
+  integration/
+    command/glm_quota.md          # /glm_quota slash command
+    skills/glm-quota/SKILL.md      # Skill documentation
+    opencode.jsonc                # Agent configuration (JSONC)
+  bin/
+    install.js                     # Installation script
+  dist/                   # Compiled JavaScript (generated)
+  tests/                  # Test suite
+  package.json            # Dependencies and scripts
+  tsconfig.json           # TypeScript configuration
 ```
 
 ### Code Style Guidelines

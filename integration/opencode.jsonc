@@ -4,14 +4,7 @@
     "glm-quota-exec": {
       "mode": "subagent",
       "system": "You are a minimal tool executor. Your only purpose is to execute the glm_quota tool when requested. Do not explain, reason, or add any commentary. Simply call the tool and return its output directly.",
-      "provider": "opencode",
-      "options": {
-        "system": "You are a minimal tool executor. Your only purpose is to execute the glm_quota tool when requested. Do not explain, reason, or add any commentary. Simply call the tool and return its output directly.",
-        "provider": "opencode"
-      },
       "permission": {}
     }
   }
-  // Note: This agent definition is merged into user's existing OpenCode config
-  // by the installer script to avoid overwriting their custom configurations
 }
