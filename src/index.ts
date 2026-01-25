@@ -336,9 +336,17 @@ function formatToolUsage(
  * @returns Formatted line with box characters
  */
 function formatBoxLine(content: string, lineIndent: number): string {
-  const trimmed = trimToDisplayWidth(content, lineIndent);
+  const trimmed = trimToDisplayWidth(content, lineIndent, 0);
   const padding = Math.max(lineIndent - getDisplayWidth(trimmed), 0);
   return '║  ' + trimmed + ' '.repeat(padding) + '║';
+}
+
+function formatProgressBoxLine(content: string, lineIndent: number): string {
+  const gap = 2;
+  const contentWidth = Math.max(lineIndent - gap, 0);
+  const trimmed = trimToDisplayWidth(content, contentWidth, 0);
+  const padding = Math.max(contentWidth - getDisplayWidth(trimmed), 0);
+  return '║  ' + trimmed + ' '.repeat(padding + gap) + '║';
 }
 
 function getDisplayWidth(text: string): number {
@@ -364,9 +372,10 @@ function getDisplayWidth(text: string): number {
   return width;
 }
 
-function trimToDisplayWidth(text: string, maxWidth: number): string {
+function trimToDisplayWidth(text: string, maxWidth: number, reserveRightPadding: number): string {
   let width = 0;
   let result = '';
+  const allowedWidth = Math.max(maxWidth - reserveRightPadding, 0);
 
   for (let i = 0; i < text.length; i += 1) {
     const codePoint = text.codePointAt(i);
@@ -383,7 +392,7 @@ function trimToDisplayWidth(text: string, maxWidth: number): string {
     }
 
     const charWidth = isEmojiCodePoint(codePoint) || isFullWidthCodePoint(codePoint) ? 2 : 1;
-    if (width + charWidth > maxWidth) {
+    if (width + charWidth > allowedWidth) {
       break;
     }
 
@@ -486,7 +495,7 @@ function formatQuotaLimits(quotaData: ProcessedQuotaLimit | null): string[] {
     for (const limit of limits) {
       const pct = typeof limit.percentage === 'number' ? limit.percentage : 0;
       const line = formatProgressLine(limit.type || 'Unknown', pct);
-      lines.push(formatBoxLine(line, LINE_INDENT));
+      lines.push(formatProgressBoxLine(line, LINE_INDENT));
 
       if (limit.nextResetTime !== undefined) {
         const resetMsg = formatTimeUntilReset(limit.nextResetTime);
