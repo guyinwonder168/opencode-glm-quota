@@ -117,36 +117,4 @@ temp/
 *.session.json
 
 # OpenCode - keep only our plugin files, ignore the rest
-.opencode/_lib/
-.opencode/agent/
-.opencode/bun.lock
-.opencode/command/*.md
-.opencode/command/openagents/
-.opencode/command/prompt-engineering/
-.opencode/config.json
-.opencode/context/
-.opencode/node_modules/
-.opencode/plugin/bun.lock
-.opencode/plugin/docs/
-.opencode/plugin/tests/
-.opencode/plugin/.gitignore
-.opencode/plugin/package.json
-.opencode/plugin/tsconfig.json
-.opencode/plugin/README.md
-.opencode/plugin/agent-validator.ts
-.opencode/plugin/agent-validator.ts.disabled
-.opencode/plugin/glm-quota.js
-.opencode/plugin/notify.ts
-.opencode/plugin/telegram-notify.ts
-.opencode/prompts/
-.opencode/scripts/
-.opencode/skill/smart-router-skill/
-.opencode/skill/task-management/
-.opencode/tool/
-
-# Keep these OpenCode plugin files (our plugin)
-!.opencode/command/glm_quota.md
-!.opencode/skill/glm-quota-skill.md
-!.opencode/opencode.json
-!.opencode/plugin/glm-quota.ts
-!.opencode/workflows/
+.opencode

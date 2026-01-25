@@ -30,7 +30,19 @@ const AGENT_CONFIG = path.join(SOURCE_DIR, 'opencode.jsonc')
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'opencode')
 const TARGET_COMMAND = path.join(CONFIG_DIR, 'command', 'glm_quota.md')
 const TARGET_SKILL = path.join(CONFIG_DIR, 'skill', 'glm-quota-skill.md')
-const TARGET_CONFIG = path.join(CONFIG_DIR, 'opencode.json')
+
+// Check which config file exists (opencode.json or opencode.jsonc)
+const TARGET_CONFIG_JSON = path.join(CONFIG_DIR, 'opencode.json')
+const TARGET_CONFIG_JSONC = path.join(CONFIG_DIR, 'opencode.jsonc')
+let TARGET_CONFIG = null
+if (fileExists(TARGET_CONFIG_JSON)) {
+  TARGET_CONFIG = TARGET_CONFIG_JSON
+} else if (fileExists(TARGET_CONFIG_JSONC)) {
+  TARGET_CONFIG = TARGET_CONFIG_JSONC
+} else {
+  // Default to opencode.json if neither exists
+  TARGET_CONFIG = TARGET_CONFIG_JSON
+}
 
 // ==========================================
 // UTILITY FUNCTIONS
@@ -77,7 +89,9 @@ function parseConfig(filePath) {
  */
 function writeConfig(filePath, data) {
   ensureDirectory(path.dirname(filePath))
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n')
+  const json = JSON.stringify(data, null, 2) + '\n'
+  fs.writeFileSync(filePath, json)
+  console.log(`  ✓ Wrote ${filePath} (${json.length} bytes)`)
 }
 
 /**
@@ -141,26 +155,41 @@ function installSkill(force) {
 }
 
 /**
- * Merge agent configuration
+ * Merge agent configuration and add plugin to plugins array
  */
 function mergeConfig() {
+  // Parse existing config if it exists (same file type will be written)
   let existingConfig = {}
-  let newConfig
-
-  // Parse existing config if it exists
   if (fileExists(TARGET_CONFIG)) {
     existingConfig = parseConfig(TARGET_CONFIG)
   }
 
   // Parse new agent config from integration
-  newConfig = parseConfig(AGENT_CONFIG)
+  const newConfig = parseConfig(AGENT_CONFIG)
 
-  // Merge agent definitions
+  // Merge agent definitions first
   const mergedConfig = deepMerge(existingConfig, newConfig)
 
-  // Write merged config
+  // Ensure plugins array exists and add our plugin
+  if (!mergedConfig.plugins) {
+    mergedConfig.plugins = []
+  }
+
+  const PLUGIN_NAME = '@opencode-glm-quota/plugin'
+  const plugins = Array.isArray(mergedConfig.plugins) ? mergedConfig.plugins : []
+
+  // Only add if not already present
+  if (!plugins.includes(PLUGIN_NAME)) {
+    plugins.push(PLUGIN_NAME)
+    mergedConfig.plugins = plugins
+    console.log(`  ✓ Added ${PLUGIN_NAME} to plugins array`)
+  } else {
+    console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in plugins array`)
+  }
+
+  // Write merged config back to the same file (opencode.json or opencode.jsonc)
   writeConfig(TARGET_CONFIG, mergedConfig)
-  console.log(`  ✓ Merged agent configuration into ${TARGET_CONFIG}`)
+  console.log(`  ✓ Merged configuration into ${path.basename(TARGET_CONFIG)}`)
 }
 
 // ==========================================
