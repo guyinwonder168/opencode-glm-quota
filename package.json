@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "opencode-glm-quota-install": "./bin/install.js"
+    "opencode-glm-quota": "./bin/install.js"
   },
   "files": [
     "dist",

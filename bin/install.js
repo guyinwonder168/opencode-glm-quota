@@ -175,16 +175,20 @@ function mergeConfig() {
     mergedConfig.plugins = []
   }
 
-  const PLUGIN_NAME = '@opencode-glm-quota/plugin'
-  const plugins = Array.isArray(mergedConfig.plugins) ? mergedConfig.plugins : []
+  const PLUGIN_NAME = 'opencode-glm-quota'
+
+  // Handle both "plugin" array and "agent" section
+  // Check for "plugin" array first (user's config uses this)
+  const pluginArrayName = mergedConfig.plugin ? 'plugin' : 'plugins'
+  const plugins = Array.isArray(mergedConfig[pluginArrayName]) ? mergedConfig[pluginArrayName] : []
 
   // Only add if not already present
   if (!plugins.includes(PLUGIN_NAME)) {
     plugins.push(PLUGIN_NAME)
-    mergedConfig.plugins = plugins
-    console.log(`  ✓ Added ${PLUGIN_NAME} to plugins array`)
+    mergedConfig[pluginArrayName] = plugins
+    console.log(`  ✓ Added ${PLUGIN_NAME} to ${pluginArrayName} array`)
   } else {
-    console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in plugins array`)
+    console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in ${pluginArrayName} array`)
   }
 
   // Write merged config back to the same file (opencode.json or opencode.jsonc)
@@ -224,6 +228,4 @@ function main() {
 }
 
 // Run installer
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main()
-}
+main()
