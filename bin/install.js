@@ -169,17 +169,18 @@ function mergeConfig() {
 
   // Merge agent definitions first
   const mergedConfig = deepMerge(existingConfig, newConfig)
-
-  // Ensure plugins array exists and add our plugin
-  if (!mergedConfig.plugins) {
-    mergedConfig.plugins = []
-  }
-
+  
   const PLUGIN_NAME = 'opencode-glm-quota'
-
+  
   // Handle both "plugin" array and "agent" section
   // Check for "plugin" array first (user's config uses this)
   const pluginArrayName = mergedConfig.plugin ? 'plugin' : 'plugins'
+  
+  // Only ensure the array we're going to use exists, not both!
+  if (!mergedConfig[pluginArrayName]) {
+    mergedConfig[pluginArrayName] = []
+  }
+  
   const plugins = Array.isArray(mergedConfig[pluginArrayName]) ? mergedConfig[pluginArrayName] : []
 
   // Only add if not already present
