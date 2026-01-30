@@ -31,6 +31,18 @@ const CANDIDATE_PROVIDER_IDS = [
   'zhipuai'
 ] as const;
 
+/**
+ * Box drawing layout constants
+ * Total line width: LEFT_BORDER (1) + LEFT_PAD (2) + CONTENT (56) + RIGHT_PAD (0) + RIGHT_BORDER (1) = 60
+ * Border lines: ╔ + 58 chars + ╗ = 60 total
+ * Content lines: ║ + 2 spaces + 56 content + 2 spaces + ║ = 60 total (formatted by formatBoxLine)
+ */
+const BOX_WIDTH = {
+  CONTENT: 56,      // Available content width
+  BORDER_CHARS: 58, // Character count between borders (╔══...══╗)
+  TOTAL: 60         // Total line width including borders
+} as const;
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -462,17 +474,15 @@ function isFullWidthCodePoint(codePoint: number): boolean {
  */
 function formatHeader(platformName: string, startTime: string, endTime: string): string[] {
   const lines: string[] = [];
-  const LINE_CONTENT = 58;
-  const LINE_INDENT = 56;
 
-  lines.push('╔' + '═'.repeat(LINE_CONTENT) + '╗');
-  lines.push('║' + ' '.repeat(LINE_CONTENT) + '║');
-  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(35).padEnd(LINE_CONTENT) + '║');
-  lines.push('║' + ' '.repeat(LINE_CONTENT) + '║');
-  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
-  lines.push(formatBoxLine(`Platform: ${platformName}`, LINE_INDENT));
-  lines.push(formatBoxLine(`Period:   ${startTime} → ${endTime}`, LINE_INDENT));
-  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
+  lines.push('╔' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╗');
+  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
+  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(35).padEnd(BOX_WIDTH.BORDER_CHARS) + '║');
+  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
+  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
+  lines.push(formatBoxLine(`Platform: ${platformName}`, BOX_WIDTH.CONTENT));
+  lines.push(formatBoxLine(`Period:   ${startTime} → ${endTime}`, BOX_WIDTH.CONTENT));
+  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
 
   return lines;
 }
@@ -484,36 +494,34 @@ function formatHeader(platformName: string, startTime: string, endTime: string):
  */
 function formatQuotaLimits(quotaData: ProcessedQuotaLimit | null): string[] {
   const lines: string[] = [];
-  const LINE_CONTENT = 58;
-  const LINE_INDENT = 56;
 
-  lines.push(formatBoxLine('QUOTA LIMITS', LINE_INDENT));
-  lines.push('╟' + '─'.repeat(LINE_CONTENT) + '╢');
+  lines.push(formatBoxLine('QUOTA LIMITS', BOX_WIDTH.CONTENT));
+  lines.push('╟' + '─'.repeat(BOX_WIDTH.BORDER_CHARS) + '╢');
 
   const limits = quotaData?.limits;
   if (limits && Array.isArray(limits)) {
     for (const limit of limits) {
       const pct = typeof limit.percentage === 'number' ? limit.percentage : 0;
       const line = formatProgressLine(limit.type || 'Unknown', pct);
-      lines.push(formatProgressBoxLine(line, LINE_INDENT));
+      lines.push(formatProgressBoxLine(line, BOX_WIDTH.CONTENT));
 
       if (limit.nextResetTime !== undefined) {
         const resetMsg = formatTimeUntilReset(limit.nextResetTime);
         if (resetMsg) {
-          lines.push(formatBoxLine(resetMsg, LINE_INDENT));
+          lines.push(formatBoxLine(resetMsg, BOX_WIDTH.CONTENT));
         }
       }
 
       if (limit.currentValue !== undefined && limit.total !== undefined) {
         const usageStr = '       Used: ' + limit.currentValue + '/' + limit.total;
-        lines.push(formatBoxLine(usageStr, LINE_INDENT));
+        lines.push(formatBoxLine(usageStr, BOX_WIDTH.CONTENT));
       }
     }
   } else {
-    lines.push(formatBoxLine('No quota data available', LINE_INDENT));
+    lines.push(formatBoxLine('No quota data available', BOX_WIDTH.CONTENT));
   }
 
-  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
+  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
 
   return lines;
 }
@@ -536,10 +544,9 @@ function formatDataSection(
   LINE_INDENT: number
 ): string[] {
   const lines: string[] = [];
-  const LINE_CONTENT = 58;
 
   lines.push(formatBoxLine(title, LINE_INDENT));
-  lines.push('╟' + '─'.repeat(LINE_CONTENT) + '╢');
+  lines.push('╟' + '─'.repeat(BOX_WIDTH.BORDER_CHARS) + '╢');
 
   if (data) {
     const formattedLines = formatter(data, quotaData);
@@ -550,7 +557,7 @@ function formatDataSection(
     lines.push(formatBoxLine(noDataMessage, LINE_INDENT));
   }
 
-  lines.push('╠' + '═'.repeat(LINE_CONTENT) + '╣');
+  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
 
   return lines;
 }
@@ -583,7 +590,6 @@ function formatOutput(
 ): string {
   const lines: string[] = [];
   const platformName = getPlatformName(platform);
-  const LINE_INDENT = 56;
 
   lines.push(...formatHeader(platformName, startTime, endTime));
   lines.push(...formatQuotaLimits(quotaData));
@@ -593,7 +599,7 @@ function formatOutput(
     formatModelUsage,
     quotaData,
     'No model usage data available',
-    LINE_INDENT
+    BOX_WIDTH.CONTENT
   ));
   lines.push(...formatDataSection(
     'TOOL/MCP USAGE (24h)',
@@ -601,7 +607,7 @@ function formatOutput(
     formatToolUsage,
     quotaData,
     'No tool usage data available',
-    LINE_INDENT
+    BOX_WIDTH.CONTENT
   ));
   lines.push(...formatFooter());
 
