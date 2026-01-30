@@ -3,6 +3,12 @@
 [![npm version](https://img.shields.io/npm/v/opencode-glm-quota.svg)](https://www.npmjs.com/package/opencode-glm-quota)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/guyinwonder168/opencode-glm-quota/workflows/CI/badge.svg)](https://github.com/guyinwonder168/opencode-glm-quota/actions)
+[![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=guyinwonder168_opencode-glm-quota)
+---
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=guyinwonder168_opencode-glm-quota&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=guyinwonder168_opencode-glm-quota)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=guyinwonder168_opencode-glm-quota&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=guyinwonder168_opencode-glm-quota)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=guyinwonder168_opencode-glm-quota&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=guyinwonder168_opencode-glm-quota)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=guyinwonder168_opencode-glm-quota&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=guyinwonder168_opencode-glm-quota)
 
 OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time quota monitoring, model usage tracking, and MCP tool usage.
 
@@ -32,7 +38,7 @@ npx opencode-glm-quota install
 - Copies `/glm_quota` command to `~/.config/opencode/command/glm_quota.md`
 - Copies skill documentation to `~/.config/opencode/skills/glm-quota/SKILL.md`
 - Automatically adds plugin to your OpenCode config
-- Merges agent configuration into `~/.config/opencode/opencode.json`
+- Copies agent to `~/.config/opencode/agents/`
 - Supports `--force` flag to overwrite existing files
 
 ### Uninstall
@@ -49,7 +55,7 @@ npx opencode-glm-quota uninstall --global
 - Removes `/glm_quota` command
 - Deletes `skills/glm-quota/SKILL.md`
 - Removes plugin entry from OpenCode config
-- Removes `glm-quota-exec` agent config
+- Removes agent file and legacy config
 - Runs `npm remove opencode-glm-quota` (or `--global`)
 
 ### Option 2: From GitHub
@@ -252,9 +258,9 @@ src/
     progress-bar.ts     # ASCII progress bar rendering
     time-window.ts      # Rolling window calculation
   integration/
+    agents/glm-quota-exec.md      # Minimal executor agent (Markdown)
     command/glm_quota.md          # /glm_quota slash command
     skills/glm-quota/SKILL.md      # Skill documentation
-    opencode.jsonc                # Agent configuration (JSONC)
   bin/
     install.js                     # Installation script
   dist/                   # Compiled JavaScript (generated)

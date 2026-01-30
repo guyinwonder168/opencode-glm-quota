@@ -27,11 +27,12 @@ const __dirname = path.dirname(__filename)
 const SOURCE_DIR = path.join(__dirname, '..', 'integration')
 const COMMAND_FILE = path.join(SOURCE_DIR, 'command', 'glm_quota.md')
 const SKILL_FILE = path.join(SOURCE_DIR, 'skills', 'glm-quota', 'SKILL.md')
-const AGENT_CONFIG = path.join(SOURCE_DIR, 'opencode.jsonc')
+const AGENT_FILE = path.join(SOURCE_DIR, 'agents', 'glm-quota-exec.md')
 
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'opencode')
 const TARGET_COMMAND = path.join(CONFIG_DIR, 'command', 'glm_quota.md')
 const TARGET_SKILL = path.join(CONFIG_DIR, 'skills', 'glm-quota', 'SKILL.md')
+const TARGET_AGENT = path.join(CONFIG_DIR, 'agents', 'glm-quota-exec.md')
 
 // Check which config file exists (opencode.json or opencode.jsonc)
 const TARGET_CONFIG_JSON = path.join(CONFIG_DIR, 'opencode.json')
@@ -181,25 +182,42 @@ function installSkill(force) {
 }
 
 /**
- * Merge agent configuration and add plugin to plugins array
+ * Install agent file
  */
-function mergeConfig() {
-  // Parse existing config if it exists (same file type will be written)
-  let existingConfig = {}
-  if (fileExists(TARGET_CONFIG)) {
-    existingConfig = parseConfig(TARGET_CONFIG)
-    // REMOVE old 'options' field to prevent verbose agent output
-    if (existingConfig.agent?.['glm-quota-exec']?.options) {
-      delete existingConfig.agent['glm-quota-exec'].options
+function installAgent(force) {
+  if (fileExists(TARGET_AGENT) && !force) {
+    if (!promptConfirm(`Agent file exists: ${TARGET_AGENT}\nOverwrite?`)) {
+      console.log(`  ⊘ Skipped ${TARGET_AGENT}`)
+      return
     }
   }
 
-  // Parse new agent config from integration
-  const newConfig = parseConfig(AGENT_CONFIG)
+  copyFile(AGENT_FILE, TARGET_AGENT)
+  console.log(`  ✓ Created ${TARGET_AGENT}`)
+}
+
+/**
+ * Update plugin configuration and cleanup old JSON agent
+ */
+function updatePluginConfig() {
+  // Parse existing config if it exists
+  let existingConfig = {}
+  if (fileExists(TARGET_CONFIG)) {
+    existingConfig = parseConfig(TARGET_CONFIG)
+  }
 
   const PLUGIN_NAME = 'opencode-glm-quota'
 
-  // Handle both "plugin" array and "agent" section
+  // CLEANUP: Remove old JSON agent config if it exists (migration from v1.3.x)
+  if (existingConfig.agent && existingConfig.agent['glm-quota-exec']) {
+    delete existingConfig.agent['glm-quota-exec']
+    if (Object.keys(existingConfig.agent).length === 0) {
+      delete existingConfig.agent
+    }
+    console.log('  ✓ Removed old JSON agent config (migrated to Markdown)')
+  }
+
+  // Handle both "plugin" array and "plugins" array
   // Check for "plugin" array first (user's config uses this)
   const pluginArrayName = existingConfig.plugin ? 'plugin' : 'plugins'
 
@@ -210,16 +228,6 @@ function mergeConfig() {
 
   const plugins = Array.isArray(existingConfig[pluginArrayName]) ? existingConfig[pluginArrayName] : []
 
-  // REPLACE entire glm-quota-exec agent (not merge, to remove old redundant fields)
-  if (newConfig.agent && newConfig.agent['glm-quota-exec']) {
-    if (!existingConfig.agent) {
-      existingConfig.agent = {}
-    }
-    existingConfig.agent['glm-quota-exec'] = newConfig.agent['glm-quota-exec']
-  } else if (!existingConfig.agent && newConfig.agent) {
-    existingConfig.agent = newConfig.agent
-  }
-
   // Only add if not already present
   if (!plugins.includes(PLUGIN_NAME)) {
     plugins.push(PLUGIN_NAME)
@@ -229,9 +237,9 @@ function mergeConfig() {
     console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in ${pluginArrayName} array`)
   }
 
-  // Write merged config back to same file (opencode.json or opencode.jsonc)
+  // Write config back to same file (opencode.json or opencode.jsonc)
   writeConfig(TARGET_CONFIG, existingConfig)
-  console.log(`  ✓ Merged configuration into ${path.basename(TARGET_CONFIG)}`)
+  console.log(`  ✓ Updated ${path.basename(TARGET_CONFIG)}`)
 }
 
 /**
@@ -303,6 +311,7 @@ function removePackage(globalFlag) {
 function uninstall(globalFlag) {
   removeFile(TARGET_COMMAND, TARGET_COMMAND)
   removeDirectory(path.dirname(TARGET_SKILL), path.dirname(TARGET_SKILL))
+  removeFile(TARGET_AGENT, TARGET_AGENT)
   removeConfig()
   removePackage(globalFlag)
 }
@@ -335,7 +344,8 @@ function main() {
     // Install integration files
     installCommand(forceFlag)
     installSkill(forceFlag)
-    mergeConfig()
+    installAgent(forceFlag)
+    updatePluginConfig()
 
     console.log()
     console.log('✓ Installation complete!')
