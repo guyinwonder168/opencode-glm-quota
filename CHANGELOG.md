@@ -4,6 +4,27 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.1] - 2026-01-31
+
+### Fixed
+- **Box alignment**: Centralized box layout constants to ensure consistent 60-character width across all output lines
+  - Added `BOX_WIDTH` constant object with `CONTENT`, `BORDER_CHARS`, and `TOTAL` values
+  - Removed duplicate local constants from formatting functions
+  - All output lines now exactly 60 characters wide
+
+### Added
+- **Alignment validation tests**: 10 comprehensive integration tests to prevent future alignment regressions
+  - Validates all lines are exactly 60 characters wide
+  - Checks border consistency and section divider alignment
+  - Tests Unicode box-drawing characters render correctly
+  - Verifies progress bar characters don't break alignment
+
+### Technical
+- Improved code maintainability by centralizing layout values
+- Enhanced test coverage from 50 to 60 tests (total)
+
+---
+
 ## [1.4.0] - 2026-01-31
 
 ### Changed
