@@ -156,20 +156,30 @@ async function getCredentials(): Promise<Credentials | null> {
 
 /**
  * Create error message for missing credentials
- * @returns Error message with setup instructions
+ * @returns Error message with setup instructions (box formatted)
  */
 function createCredentialError(): string {
-  return `❌ Z.ai Credentials Not Found
+  const header = '  ❌ Z.ai Credentials Not Found';
+  const instructions = [
+    '',
+    '  Please authenticate first:',
+    '',
+    '  1. Run /connect command in OpenCode TUI',
+    '  2. Select "Z.AI Coding Plan" or "Z.AI"',
+    '  3. Or "Zhipu" (for China region)',
+    '',
+    '  For dev/testing, set environment:',
+    '  - ZAI_API_KEY (global)',
+    '  - ZHIPU_API_KEY (China)',
+    ''
+  ];
 
-Please authenticate first:
-
-1. Run '/connect' command in OpenCode TUI
-2. Select "Z.AI Coding Plan" or "Z.AI" (for global)
-3. Or "Zhipu" (for China region)
-
-For development/testing, you can also set environment variables:
-  - ZAI_API_KEY (global platform)
-  - ZHIPU_API_KEY or ZHIPUAI_API_KEY (China platform)`;
+  return '╔' + '═'.repeat(58) + '╗\n' +
+         '║' + ' '.repeat(58) + '║\n' +
+         '║' + header.padEnd(58) + '║\n' +
+         '║' + ' '.repeat(58) + '║\n' +
+         instructions.map(line => '║' + line.padEnd(58) + '║').join('\n') + '\n' +
+         '╚' + '═'.repeat(58) + '╝';
 }
 
 // ============================================================================
