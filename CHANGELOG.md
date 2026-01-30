@@ -4,6 +4,39 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.0] - 2026-01-31
+
+### Changed
+- **Agent configuration format**: Migrated from JSON merge to Markdown file approach
+  - Agent now defined in `integration/agents/glm-quota-exec.md` with YAML frontmatter
+  - Installer copies MD file to `~/.config/opencode/agents/` (plural directory)
+  - Removed `integration/opencode.jsonc` (no longer needed)
+  - Cleaner separation of concerns: agent definition separate from plugin config
+
+### Added
+- **Markdown agent file**: `integration/agents/glm-quota-exec.md` with YAML frontmatter
+  - `description`: Human-readable agent purpose
+  - `mode: subagent`: Agent type
+  - `hidden: true`: Hide from user-facing lists
+  - `permission.edit: deny`, `permission.bash: deny`: Security constraints
+  - System prompt in body section (not in frontmatter)
+
+### Fixed
+- **Migration path**: Installer now removes old JSON agent config from user's opencode.json
+- **Directory naming**: Uses `agents/` (plural) per OpenCode official documentation
+- **Uninstaller**: Cleans up both MD file and legacy JSON agent config
+
+### Removed
+- `integration/opencode.jsonc` - Agent moved to Markdown format
+- JSON-based agent merging logic from installer
+
+### Technical
+- Installer updated to handle Markdown agent files
+- Uninstaller updated to remove both MD and legacy JSON configs
+- Documentation updated to reflect new approach (README.md, AGENTS.md)
+
+---
+
 ## [1.3.4] - 2026-01-26
 
 ### Fixed

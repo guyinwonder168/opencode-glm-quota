@@ -27,14 +27,14 @@ export function createProgressBar(
     filledChar = '█',
     emptyChar = '░'
   } = options;
-  
+
   // Clamp percentage to 0-100
   const clampedPercentage = Math.min(100, Math.max(0, percentage));
-  
+
   // Calculate filled width
   const filledWidth = Math.round((clampedPercentage / 100) * width);
   const emptyWidth = width - filledWidth;
-  
+
   return filledChar.repeat(filledWidth) + emptyChar.repeat(emptyWidth);
 }
 
@@ -59,7 +59,7 @@ export function formatProgressLine(
   label: string,
   percentage: number
 ): string {
-  const bar = createProgressBar(percentage, { width: 11 });
+  const bar = createProgressBar(percentage, { width: 12 });
   const pctStr = formatPercentage(percentage).padStart(6);
   const labelStr = label.slice(0, 20).padEnd(20);
 
