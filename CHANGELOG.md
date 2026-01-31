@@ -4,6 +4,16 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.2] - 2026-01-31
+
+### Changed
+- **Progress bar rendering**: Switched default bar characters to ASCII (`#` and `-`) to avoid double-width rendering in some terminals (e.g., VTE-based) and keep 60-column box alignment stable
+
+### Technical
+- Updated progress bar tests to match ASCII defaults
+
+---
+
 ## [1.4.1] - 2026-01-31
 
 ### Fixed
