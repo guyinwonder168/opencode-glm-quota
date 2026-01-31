@@ -159,27 +159,34 @@ async function getCredentials(): Promise<Credentials | null> {
  * @returns Error message with setup instructions (box formatted)
  */
 function createCredentialError(): string {
-  const header = '  ❌ Z.ai Credentials Not Found';
+  const header = '❌ Z.ai Credentials Not Found';
   const instructions = [
     '',
-    '  Please authenticate first:',
+    'Please authenticate first:',
     '',
-    '  1. Run /connect command in OpenCode TUI',
-    '  2. Select "Z.AI Coding Plan" or "Z.AI"',
-    '  3. Or "Zhipu" (for China region)',
+    '1. Run /connect command in OpenCode TUI',
+    '2. Select "Z.AI Coding Plan" or "Z.AI"',
+    '3. Or "Zhipu" (for China region)',
     '',
-    '  For dev/testing, set environment:',
-    '  - ZAI_API_KEY (global)',
-    '  - ZHIPU_API_KEY (China)',
+    'For dev/testing, set environment:',
+    '- ZAI_API_KEY (global)',
+    '- ZHIPU_API_KEY (China)',
     ''
   ];
 
-  return '╔' + '═'.repeat(58) + '╗\n' +
-         '║' + ' '.repeat(58) + '║\n' +
-         '║' + header.padEnd(58) + '║\n' +
-         '║' + ' '.repeat(58) + '║\n' +
-         instructions.map(line => '║' + line.padEnd(58) + '║').join('\n') + '\n' +
-         '╚' + '═'.repeat(58) + '╝';
+  const lines: string[] = [];
+  lines.push('╔' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╗');
+  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
+  lines.push(formatBoxLine(header, BOX_WIDTH.CONTENT));
+  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
+  
+  for (const instruction of instructions) {
+    lines.push(formatBoxLine(instruction, BOX_WIDTH.CONTENT));
+  }
+  
+  lines.push('╚' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╝');
+  
+  return lines.join('\n');
 }
 
 // ============================================================================
