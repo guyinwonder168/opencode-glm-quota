@@ -6,6 +6,7 @@
 import * as https from 'node:https';
 import type { Endpoints } from './endpoints.js';
 import { sanitizeToken } from '../utils/error-formatter.js';
+import { BOX_WIDTH } from '../utils/box-constants.js';
 
 /**
  * API response type
@@ -56,13 +57,14 @@ function formatNetworkError(error: NetworkError, authToken: string): Error {
 }
 
 /**
- * Create a boxed error message with 60-character width
+ * Create a boxed error message
+ * Uses BOX_WIDTH constant for consistent formatting across the plugin
  * @param message - Error message to box
  * @returns Boxed error message
  */
 function createBoxedError(message: string): string {
-  const width = 60;
-  const padding = 2;
+  const width = BOX_WIDTH.TOTAL;
+  const padding = BOX_WIDTH.PADDING;
   const contentWidth = width - (padding * 2) - 2; // -2 for border characters
 
   const lines: string[] = [];

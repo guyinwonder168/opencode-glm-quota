@@ -17,6 +17,7 @@ import { queryEndpoint } from "./api/client.js";
 import { getTimeWindow, getTimeWindowQueryParams } from "./utils/time-window.js";
 import { formatProgressLine } from "./utils/progress-bar.js";
 import { formatTimeUntilReset } from "./utils/reset-timer.js";
+import { BOX_WIDTH, HEADER } from "./utils/box-constants.js";
 
 // ============================================================================
 // CONSTANTS
@@ -30,18 +31,6 @@ const CANDIDATE_PROVIDER_IDS = [
   'zhipu',
   'zhipuai'
 ] as const;
-
-/**
- * Box drawing layout constants
- * Total line width: LEFT_BORDER (1) + LEFT_PAD (2) + CONTENT (56) + RIGHT_PAD (0) + RIGHT_BORDER (1) = 60
- * Border lines: ╔ + 58 chars + ╗ = 60 total
- * Content lines: ║ + 2 spaces + 56 content + 2 spaces + ║ = 60 total (formatted by formatBoxLine)
- */
-const BOX_WIDTH = {
-  CONTENT: 56,      // Available content width
-  BORDER_CHARS: 58, // Character count between borders (╔══...══╗)
-  TOTAL: 60         // Total line width including borders
-} as const;
 
 // ============================================================================
 // TYPES
@@ -494,7 +483,7 @@ function formatHeader(platformName: string, startTime: string, endTime: string):
 
   lines.push('╔' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╗');
   lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
-  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(35).padEnd(BOX_WIDTH.BORDER_CHARS) + '║');
+  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(HEADER.TITLE_PAD_START).padEnd(BOX_WIDTH.BORDER_CHARS) + '║');
   lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
   lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
   lines.push(formatBoxLine(`Platform: ${platformName}`, BOX_WIDTH.CONTENT));
@@ -584,7 +573,7 @@ function formatDataSection(
  * @returns Footer lines
  */
 function formatFooter(): string[] {
-  return ['╚' + '═'.repeat(58) + '╝'];
+  return ['╚' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╝'];
 }
 
 /**

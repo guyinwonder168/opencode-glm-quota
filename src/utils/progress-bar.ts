@@ -3,6 +3,8 @@
  * Creates ASCII progress bars for quota visualization
  */
 
+import { PROGRESS_BAR } from './box-constants.js';
+
 /**
  * Progress bar options
  */
@@ -23,7 +25,7 @@ export function createProgressBar(
   options: ProgressBarOptions = {}
 ): string {
   const {
-    width = 30,
+    width = PROGRESS_BAR.DEFAULT_WIDTH,
     filledChar = '#',
     emptyChar = '-'
   } = options;
@@ -50,18 +52,18 @@ export function formatPercentage(percentage: number, decimals: number = 1): stri
 
 /**
  * Create full progress bar line for quota display
+ * Uses PROGRESS_BAR constants for consistent width across plugin
  * @param label - Label text
  * @param percentage - Percentage value
- * @param totalWidth - Total line width (default: 60)
  * @returns Formatted progress bar line
  */
 export function formatProgressLine(
   label: string,
   percentage: number
 ): string {
-  const bar = createProgressBar(percentage, { width: 12 });
-  const pctStr = formatPercentage(percentage).padStart(6);
-  const labelStr = label.slice(0, 20).padEnd(20);
+  const bar = createProgressBar(percentage, { width: PROGRESS_BAR.BAR_WIDTH });
+  const pctStr = formatPercentage(percentage).padStart(PROGRESS_BAR.PERCENTAGE_WIDTH);
+  const labelStr = label.slice(0, PROGRESS_BAR.LABEL_WIDTH).padEnd(PROGRESS_BAR.LABEL_WIDTH);
 
   return `${labelStr}  [${bar}] ${pctStr}`;
 }
