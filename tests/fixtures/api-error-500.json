@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "internal_server_error",
+    "message": "Internal server error. Please try again later."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Authentication failed. Invalid or expired token."
+  }
+}
