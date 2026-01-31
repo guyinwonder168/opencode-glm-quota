@@ -8,8 +8,8 @@
  */
 export interface ProgressBarOptions {
   width?: number;       // Total width of bar (default: 30)
-  filledChar?: string;  // Character for filled portion (default: '█')
-  emptyChar?: string;   // Character for empty portion (default: '░')
+  filledChar?: string;  // Character for filled portion (default: '#')
+  emptyChar?: string;   // Character for empty portion (default: '-')
 }
 
 /**
@@ -24,8 +24,8 @@ export function createProgressBar(
 ): string {
   const {
     width = 30,
-    filledChar = '█',
-    emptyChar = '░'
+    filledChar = '#',
+    emptyChar = '-'
   } = options;
 
   // Clamp percentage to 0-100

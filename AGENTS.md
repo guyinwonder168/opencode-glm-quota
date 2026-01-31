@@ -207,7 +207,7 @@ function formatDateTime(date: Date): string {
 ### Output Formatting
 - Use ASCII box-drawing characters (`╔`, `╠`, `║`, `╚`) for tables
 - Pad strings to fixed width: `text.padEnd(width)`
-- Progress bars: `█` for filled, `░` for empty
+- Progress bars: `#` for filled, `-` for empty (ASCII to avoid terminal double-width issues)
 - Truncate long output with ellipsis `...`
 
 ### Comments & Documentation

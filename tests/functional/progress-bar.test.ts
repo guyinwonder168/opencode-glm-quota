@@ -10,22 +10,22 @@ describe('createProgressBar', () => {
   test('creates full bar at 100%', () => {
     const result = createProgressBar(100);
     assert.strictEqual(result.length, 30);
-    assert.ok(result.includes('█'));
-    assert.ok(!result.includes('░'));
+    assert.ok(result.includes('#'));
+    assert.ok(!result.includes('-'));
   });
 
   test('creates empty bar at 0%', () => {
     const result = createProgressBar(0);
     assert.strictEqual(result.length, 30);
-    assert.ok(!result.includes('█'));
-    assert.ok(result.includes('░'));
+    assert.ok(!result.includes('#'));
+    assert.ok(result.includes('-'));
   });
 
   test('creates half-filled bar at 50%', () => {
     const result = createProgressBar(50);
     assert.strictEqual(result.length, 30);
-    const filledCount = (result.match(/█/g) || []).length;
-    const emptyCount = (result.match(/░/g) || []).length;
+    const filledCount = (result.match(/#/g) || []).length;
+    const emptyCount = (result.match(/-/g) || []).length;
     assert.strictEqual(filledCount, 15);
     assert.strictEqual(emptyCount, 15);
   });
@@ -33,15 +33,15 @@ describe('createProgressBar', () => {
   test('clamps percentage to 100', () => {
     const result = createProgressBar(150);
     assert.strictEqual(result.length, 30);
-    assert.ok(result.includes('█'));
-    assert.ok(!result.includes('░'));
+    assert.ok(result.includes('#'));
+    assert.ok(!result.includes('-'));
   });
 
   test('clamps percentage to 0', () => {
     const result = createProgressBar(-50);
     assert.strictEqual(result.length, 30);
-    assert.ok(!result.includes('█'));
-    assert.ok(result.includes('░'));
+    assert.ok(!result.includes('#'));
+    assert.ok(result.includes('-'));
   });
 
   test('uses custom width', () => {
@@ -56,8 +56,8 @@ describe('createProgressBar', () => {
     });
     assert.ok(result.includes('■'));
     assert.ok(result.includes('□'));
-    assert.ok(!result.includes('█'));
-    assert.ok(!result.includes('░'));
+    assert.ok(!result.includes('#'));
+    assert.ok(!result.includes('-'));
   });
 });
 
@@ -84,8 +84,8 @@ describe('formatProgressLine', () => {
     const result = formatProgressLine('Test Label', 75);
     assert.ok(result.includes('Test Label'));
     assert.ok(result.includes('75.0%'));
-    assert.ok(result.includes('█'));
-    assert.ok(result.includes('░'));
+    assert.ok(result.includes('#'));
+    assert.ok(result.includes('-'));
   });
 
   test('pads label to 20 characters', () => {

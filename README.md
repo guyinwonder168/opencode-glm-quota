@@ -19,7 +19,7 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 - 🔧 View MCP tool usage (web_search, web_reader, etc.)
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
 - 🔐 Automatic credential discovery from OpenCode auth.json
-- 📈 Visual progress bars for quota percentages
+- 📈 Visual progress bars for quota percentages (ASCII for terminal alignment)
 - ⚡ Fail-fast error handling (no retry logic - user controls when to retry)
 
 ## Installation
@@ -134,19 +134,19 @@ After authentication, simply run:
 ║  Platform: ZAI                                                   ║
 ║  Period:   2026-01-17 21:00:00 → 2026-01-18 20:59:59             ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  📊 QUOTA LIMITS                                                 ║
+║  QUOTA LIMITS                                                    ║
 ╟──────────────────────────────────────────────────────────────────╢
-║  Token usage(5 Hour)      [███████████████████░░░░░░░░░]  40.5%  ║
-║  MCP usage(1 Month)       [████░░░░░░░░░░░░░░░░░░░░░░░░░]  12.3% ║
+║  Token usage(5 Hour)      [###################--------]  40.5%   ║
+║  MCP usage(1 Month)       [####-----------------------]  12.3%   ║
 ║       Used: 123/1,000                                            ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  🤖 MODEL USAGE (24h)                                            ║
+║  MODEL USAGE (24h)                                               ║
 ╟──────────────────────────────────────────────────────────────────╢
 ║  Total Tokens (24h): 12,500,000 (31% of 5h limit)                ║
 ║  5h Window Usage: 40.5% of 40,000,000                            ║
 ║  Total Calls: 1,234                                              ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  🔧 TOOL/MCP USAGE (24h)                                         ║
+║  TOOL/MCP USAGE (24h)                                            ║
 ╟──────────────────────────────────────────────────────────────────╢
 ║  Network Searches: 5,678                                         ║
 ║  Web Reads: 2,345                                                ║
