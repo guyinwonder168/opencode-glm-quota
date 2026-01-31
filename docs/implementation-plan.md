@@ -18,11 +18,11 @@
 | Slice 3: Single Endpoint Query | ✅ **COMPLETE** | 2026-01-18 | - | - |
 | Slice 4: Multiple Endpoints & Display | ✅ **COMPLETE** | 2026-01-18 | - | - |
 | Slice 4.5: Add Next Reset Time | ✅ **COMPLETE** | 2026-01-21 | 13 | N/A |
-| Slice 4.6: Global Installation & Setup Command | ⏳ **TODO** | - | - | - |
+| Slice 4.6: Global Installation & Setup Command | ✅ **COMPLETE** | 2026-01-31 | - | - |
 | Slice 5: Error Handling & Edge Cases | ⏳ **TODO** | - | - | - |
 | Slice 6: Refactoring & Optimization | ⏳ **TODO** | - | - | - |
 
-**Overall Progress:** 7/8 slices complete (87.5%)
+**Overall Progress:** 8/9 slices complete (88.9%)
 
 ---
 
@@ -355,11 +355,11 @@ Each slice MUST:
 
 ---
 
-### SLICE 4.6: Global Installation & Setup Command
+### SLICE 4.6: Global Installation & Setup Command ✅ **COMPLETE**
 
 **User Value:** Users can install plugin via npm with automatic OpenCode configuration, enabling `/glm_quota` command to work after installation.
 
-**Status:** ⏳ **TODO**
+**Status:** ✅ **COMPLETE** (2026-01-31)
 **Priority:** Medium (usability enhancement)
 **Estimated Time:** 1-2 days
 
@@ -395,13 +395,13 @@ Package includes an installer command that copies `/integration/` files from npm
 ```
 
 **Acceptance Criteria:**
-- [ ] `package.json` includes `integration/` in `files` field
-- [ ] `package.json` includes bin entry for install command
-- [ ] `bin/install.js` copies files from npm package to OpenCode config
-- [ ] Installer merges `opencode.jsonc` into existing config using JSONC parser
-- [ ] Manual `npx @opencode-glm-quota/plugin install` works for user control
-- [ ] `npx @opencode-glm-quota/plugin install --force` overwrites existing
-- [ ] Documentation updated with installation instructions
+- [x] `package.json` includes `integration/` in `files` field
+- [x] `package.json` includes bin entry for install command
+- [x] `bin/install.js` copies files from npm package to OpenCode config
+- [x] Installer merges `opencode.jsonc` into existing config using JSONC parser
+- [x] Manual `npx @opencode-glm-quota/plugin install` works for user control
+- [x] `npx @opencode-glm-quota/plugin install --force` overwrites existing
+- [x] Documentation updated with installation instructions
 
 **Files to Create:**
 - `integration/opencode.jsonc` - Agent configuration (JSONC)
@@ -1249,5 +1249,5 @@ This plan provides:
 
 *Document Version: 1.4*
 *Created: 2026-01-17*
-*Last Updated: 2026-01-18*
-*Status: Slice 4 Complete, Proceeding to Slice 5*
+*Last Updated: 2026-01-31*
+*Status: Slice 4.6 Complete, Proceeding to Slice 5*
