@@ -131,7 +131,7 @@ After authentication, simply run:
 ║           Z.ai GLM Coding Plan Usage Statistics                  ║
 ║                                                                  ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  Platform: ZAI                                                   ║
+║  Platform: Z.AI                                                  ║
 ║  Period:   2026-01-17 21:00:00 → 2026-01-18 20:59:59             ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  QUOTA LIMITS                                                    ║
@@ -161,17 +161,21 @@ The plugin uses fail-fast error handling. If any API request fails, it will disp
 **Example Error Output:**
 
 ```
-❌ Z.ai Credentials Not Found
-
-Please authenticate first:
-
-1. Run '/connect' command in OpenCode TUI
-2. Select "Z.AI Coding Plan" or "Z.AI" (for global)
-3. Or "Zhipu" (for China region)
-
-For development/testing, you can also set environment variables:
-  - ZAI_API_KEY (global platform)
-  - ZHIPU_API_KEY or ZHIPUAI_API_KEY (China platform)
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║  ❌ Z.ai Credentials Not Found                                   ║
+║                                                                  ║
+║  Please authenticate first:                                      ║
+║                                                                  ║
+║  1. Run /connect command in OpenCode TUI                         ║
+║  2. Select "Z.AI Coding Plan" or "Z.AI"                          ║
+║  3. Or "Zhipu" (for China region)                                ║
+║                                                                  ║
+║  For dev/testing, set environment:                               ║
+║  - ZAI_API_KEY (global)                                          ║
+║  - ZHIPU_API_KEY (China)                                         ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
 
 ## API Reference
