@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **Integration error coverage (catch block)**
+  - New integration tests in `tests/integration/plugin-catch-block.test.ts`
+  - Verifies boxed error handling for thrown `Error`, string throws, and multiline errors
+
+- **TLS fixtures for HTTPS tests**
+  - Added `tests/fixtures/test-key.pem` and `tests/fixtures/test-cert.pem`
+  - Enables real HTTPS server testing without EPROTO failures
 - **500+ Server Error Handling** - Graceful server error messages:
   - Extended `formatApiError()` to handle HTTP 500, 502, 503, etc. responses
   - User-friendly boxed message: "Server error. Please try again later."
@@ -36,6 +43,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   - 4 new tests for auth error handling (all passing)
 
 ### Fixed
+- **HTTPS test server connectivity**
+  - `makeRequest()` now honors URL ports (required for local HTTPS test servers)
+  - `tests/module/http-client.test.ts` now uses real TLS certs
 - **Box dimension constants**: Replaced hardcoded `60` values with `BOX_WIDTH.TOTAL` constant from `src/utils/box-constants.ts` in all test files for consistency
 
 ### Technical

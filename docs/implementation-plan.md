@@ -19,16 +19,463 @@
 | Slice 4: Multiple Endpoints & Display | ✅ **COMPLETE** | 2026-01-18 | - | - |
 | Slice 4.5: Add Next Reset Time | ✅ **COMPLETE** | 2026-01-21 | 13 | N/A |
 | Slice 4.6: Global Installation & Setup Command | ✅ **COMPLETE** | 2026-01-31 | - | - |
-| Slice 5: Error Handling & Edge Cases | ✅ **COMPLETE** | 2026-02-01 | 101 | N/A |
+| Slice 5: Error Handling & Edge Cases | 🔄 **IN PROGRESS** | 2026-02-01 | 101 | N/A |
 | Slice 6: Refactoring & Optimization | ⏳ **TODO** | - | - | - |
 
-**Overall Progress:** 8/9 slices complete (88.9%), Slice 5 complete.
+**Overall Progress:** 8/9 slices complete (88.9%), Slice 5 in progress (14/16 tasks complete)
 
 ---
 
-### Phase 6: Finalization (Tasks 15-16)
-- Task 15: Update `docs/implementation-plan.md` (mark Slice 5 complete) ✅
-- Task 16: Git commit & push: `feat: comprehensive error handling with token sanitization` ✅
+## 1. TDD Methodology
+
+### 1.1 Core Principles
+
+**Test-Driven Development (TDD)** means writing tests before implementation code. This ensures:
+- Code is testable by design
+- Tests actually test behavior (proven by watching them fail first)
+- Refactoring is safe (tests catch regressions)
+- Design emerges from usage
+
+**The Iron Rule:**
+```
+NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
+```
+
+### 1.2 Red-Green-Refactor Cycle
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ RED: Write failing test                                     │
+│   - Write ONE minimal test showing desired behavior         │
+│   - MUST watch it fail (proves it tests something)          │
+└─────────────────┬───────────────────────────────────────────┘
+                  │ Verify fails correctly
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│ GREEN: Write minimal code                                   │
+│   - Simplest code to make test pass                         │
+│   - Don't add features or refactor yet                      │
+└─────────────────┬───────────────────────────────────────────┘
+                  │ Verify passes
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│ REFACTOR: Clean up                                          │
+│   - Remove duplication                                      │
+│   - Improve names                                           │
+│   - Extract helpers (keep tests green)                      │
+└─────────────────┬───────────────────────────────────────────┘
+                  │
+                  ▼
+              Next test
+```
+
+### 1.3 Critical TDD Rules
+
+1. **Never skip RED phase** - If you didn't watch the test fail, you don't know if it tests the right thing
+2. **Always write minimal code** - Just enough to pass, no YAGNI
+3. **One behavior per test** - Clear, descriptive names, single assertion
+4. **Test real code** - Minimize mocks, test actual behavior
+5. **Fix failures immediately** - Never commit failing tests
+6. **Refactor only when green** - Never refactor with red tests
+
+### 1.4 Anti-Patterns (STOP if you think these)
+
+| Thought | Reality |
+|---------|---------|
+| "I'll test after" | Tests passing immediately prove nothing |
+| "Already manually tested" | Ad-hoc ≠ systematic, no record |
+| "Delete X hours is wasteful" | Sunk cost fallacy - keeping unverified code = technical debt |
+| "TDD is too slow" | Debugging in production is slower |
+| "This is too simple to test" | Simple code breaks. Test takes 30 seconds. |
+| "Keep as reference, write tests first" | You'll adapt it = testing after. Delete = delete. |
+
+---
+
+## 2. Vertical Slicing Strategy
+
+### 2.1 What is Vertical Slicing?
+
+Vertical slicing means building **complete end-to-end features** instead of horizontal layers. Each slice delivers user value and can be tested independently.
+
+**Horizontal (Traditional) - ❌ BAD:**
+```
+Layer 1: Data models, interfaces, types
+Layer 2: HTTP client, authentication
+Layer 3: Business logic, data transformation
+Layer 4: UI/formatting, output display
+```
+Problem: No user value until all layers complete. Can't test end-to-end.
+
+**Vertical (Better) - ✅ GOOD:**
+```
+Slice 1: Credential discovery → Auth check → Error message
+Slice 2: + Time window calculation → One API call → Display quota
+Slice 3: + Multiple API calls → Full output → Progress bars
+```
+Benefit: Each slice delivers value. Can test independently.
+
+### 2.2 Vertical Slice Criteria
+
+Each slice MUST:
+1. **Deliver user value** - User can see/interact with result
+2. **Be testable end-to-end** - Integration tests from start to finish
+3. **Have clear acceptance criteria** - Definition of done
+4. **Have minimal dependencies** - Small surface area, focused scope
+5. **Follow TDD** - Red-Green-Refactor for each feature
+
+### 2.3 Slice Prioritization
+
+**Priority Order (MVP → Full Features):**
+
+1. **Slice 1: Authentication & Credential Discovery** (FOUNDATION)
+   - Highest priority: Everything depends on this
+   - User value: Clear error message when not authenticated
+   - Testable: Mock auth.json, environment variables
+
+2. **Slice 2: Time Window & Utility Functions** (CORE INFRA)
+   - Foundation for all API queries
+   - User value: Accurate time ranges for usage stats
+   - Testable: Pure functions, easy to test
+
+3. **Slice 3: Single Endpoint Query** (MVP FEATURE)
+   - First working API call (quota limits)
+   - User value: See current quota percentages
+   - Testable: Mock HTTP responses
+
+4. **Slice 4: Multiple Endpoints & Display** (FULL FEATURE)
+   - All three endpoints working together
+   - User value: Complete usage statistics
+   - Testable: Integration test all API calls
+
+5. **Slice 5: Error Handling & Edge Cases** (PRODUCTION READY)
+   - Network failures, auth errors, parse errors
+   - User value: Graceful error messages, no crashes
+   - Testable: Mock error responses
+
+6. **Slice 6: Refactoring & Optimization** (POLISH)
+   - Code quality, performance, maintainability
+   - User value: Faster, more maintainable code
+   - Testable: Tests prevent regressions
+
+---
+
+## 3. Vertical Slices (Detailed)
+
+### SLICE 1: Authentication & Credential Discovery ✅ **COMPLETE**
+
+**User Value:** Users see helpful error message when not authenticated, guiding them to set up credentials.
+
+**Status:** ✅ COMPLETED (2026-01-18)  
+**Priority:** High (prerequisite for user-facing command)
+
+**Acceptance Criteria:**
+- [x] Plugin reads OpenCode auth.json from correct path
+- [x] Plugin detects ZAI and ZHIPU platforms from provider IDs
+- [x] Plugin falls back to environment variables for testing
+- [x] Plugin throws clear error when no credentials found
+- [x] Error message includes setup instructions
+
+**Dependencies:** None (foundation slice)
+
+---
+
+### SLICE 1.5: OpenCode Command & Skill Integration ✅ **COMPLETE**
+
+**User Value:** Users can invoke `/glm_quota` command with full discoverability, matching the Claude Code plugin experience.
+
+**Status:** ✅ COMPLETED (2026-01-18)  
+**Priority:** High (prerequisite for user-facing command)
+
+**Acceptance Criteria:**
+- [x] `.opencode/command/glm_quota.md` created with command definition
+- [x] `.opencode/skill/glm-quota-skill.md` created with skill definition
+- [x] `.opencode/opencode.json` created with agent definition
+- [x] `scripts/query-usage.mjs` ported from Claude Code
+- [ ] Command works when user types `/glm_quota` (manual test in OpenCode TUI)
+- [ ] Skill properly invokes TypeScript plugin logic
+- [ ] Agent orchestrates workflow correctly
+- [ ] Output matches expected ASCII table format
+
+**Files Created:**
+
+| File | Description | Status |
+|------|-------------|--------|
+| `.opencode/command/glm_quota.md` | Command file | ✅ Created |
+| `.opencode/skill/glm-quota-skill.md` | Skill file | ✅ Created |
+| `.opencode/opencode.json` | Agent definition | ✅ Created |
+| `scripts/query-usage.mjs` | Standalone CLI script | ✅ Already exists |
+
+**Dependencies:** Slice 1 (plugin must work before command can invoke it)
+
+**Test Strategy:**
+- Manual testing: Invoke `/glm_quota` command and verify output
+- No automated tests for command/skill files (they are configuration)
+
+**Estimated Time:** 1-2 hours
+
+**Steps:**
+1. Create `.opencode/command/glm_quota.md` with command YAML
+2. Create `.opencode/skill/glm-quota-skill.md` with skill YAML
+3. Create `.opencode/opencode.json` with agent definition
+4. Verify command works in OpenCode TUI
+5. Verify output format matches expected ASCII table
+
+**Git Commit:** `7cf3e4c` - "feat(opencode): add command/skill integration for glm_quota"
+
+---
+
+### SLICE 2: Time Window & Utility Functions ✅ **COMPLETE**
+
+**User Value:** Accurate 24-hour rolling window for usage statistics queries.
+
+**Status:** ✅ COMPLETED (2026-01-18)  
+**Priority:** High (core infrastructure)
+
+**Acceptance Criteria:**
+- [x] `formatDateTime()` formats dates as `yyyy-MM-dd HH:mm:ss`
+- [x] `getTimeWindow()` returns yesterday at current hour → today at current hour end
+- [x] `createProgressBar()` generates visual progress bars with █ and ░
+- [x] `processQuotaLimit()` transforms TOKENS_LIMIT and TIME_LIMIT responses
+- [x] All utility functions are pure (no side effects)
+- [x] All edge cases handled (boundary values, zero, 100%)
+
+**Files Created:**
+- `tests/functional/date-formatter.test.ts` - Date formatting tests
+- `tests/functional/time-window.test.ts` - Time window tests
+- `tests/functional/progress-bar.test.ts` - Progress bar tests
+- `src/utils/date-formatter.ts` - Date formatter implementation
+- `src/utils/time-window.ts` - Time window implementation
+- `src/utils/progress-bar.ts` - Progress bar implementation
+
+**Dependencies:** Slice 1 (for auth context in integration tests)
+
+---
+
+### SLICE 3: Single Endpoint Query (Quota Limits) ✅ **COMPLETE**
+
+**User Value:** Users see current quota percentages for 5-hour token cycle and monthly MCP usage.
+
+**Status:** ✅ COMPLETED (2026-01-18)
+
+**Files to Create:**
+- `tests/module/http-client.test.ts`
+- `tests/integration/quota-query-pipeline.test.ts`
+- `tests/fixtures/api-quota-success.json`
+- `tests/mocks/https.mock.ts`
+
+**Dependencies:** Slice 1 (auth), Slice 2 (utilities, display)
+
+---
+
+### SLICE 4: Multiple Endpoints & Display ✅ **COMPLETE**
+
+**User Value:** Users see complete usage statistics including model usage and MCP tool usage.
+
+**Status:** ✅ COMPLETED (2026-01-18)
+
+**Acceptance Criteria:**
+- [x] Model usage endpoint called with time window query params
+- [x] Tool usage endpoint called with time window query params
+- [x] Query parameters URL-encoded properly
+- [x] All three endpoints queried sequentially (not parallel)
+- [x] Each section displays in ASCII table format
+- [x] Model usage JSON truncated to fit table (8 lines max)
+- [x] Tool usage JSON truncated to fit table (8 lines max)
+- [x] Platform displayed in header
+- [x] Time window displayed in header
+- [x] End-to-end integration test passes
+
+**Files to Create:**
+- `tests/integration/full-query-pipeline.test.ts`
+- `tests/fixtures/api-model-success.json`
+- `tests/fixtures/api-tool-success.json`
+
+**Dependencies:** Slice 3 (single endpoint working)
+
+---
+
+### SLICE 4.5: Add Next Reset Time ✅ **COMPLETE**
+
+**User Value:** Users see accurate countdown timers showing when their 5-hour token quota will reset, enabling better usage planning.
+
+**Status:** ✅ COMPLETED (2026-01-21)
+**Priority:** Medium (enhancement to existing display)
+
+**Acceptance Criteria:**
+- [x] `nextResetTime` field from API response is parsed and processed
+- [x] `formatTimeUntilReset()` utility function converts Unix timestamps to human-readable countdowns
+- [x] Reset countdown displayed in quota output: "Resets in X hours Y minutes"
+- [x] Countdown updates based on current time vs reset timestamp
+- [x] Graceful handling when reset time is not available (fallback to existing display)
+- [x] Tests for reset time formatting and display logic
+- [x] Integration tests verify reset countdown appears in output
+
+**User Value Delivered:**
+- **Before:** Users see static quota percentages without knowing when reset occurs
+- **After:** Users see "Resets in 4 hours 42 minutes" enabling better usage planning
+
+**Technical Implementation:**
+- Parse `nextResetTime` field from `/quota/limit` API response (Unix timestamp in milliseconds)
+- Add `formatTimeUntilReset()` function to convert timestamps to human-readable format
+- Update display logic to include reset countdown when available
+- Handle edge cases (reset time in past, invalid timestamps)
+
+**Files Created/Modified:**
+- `src/utils/reset-timer.ts` - Reset time formatting utility (NEW)
+- `src/index.ts` - Updated quota processing and display logic
+- `tests/functional/reset-timer.test.ts` - Tests for reset time formatting (NEW)
+- `tests/integration/reset-time-display.test.ts` - Integration tests for display (NEW)
+
+**Tests Created:**
+- ✅ 9 functional tests for `formatTimeUntilReset()` (null, undefined, past, edge cases)
+- ✅ 4 integration tests for reset time display in full output
+- ✅ Total: 13 new tests (100% pass rate)
+- ✅ Overall test count: 50 tests passing (37 existing + 13 new)
+
+**Dependencies:** Slice 4 (display logic working), API Validation (confirmed nextResetTime field exists)
+
+**Test Strategy:**
+- Unit tests for `formatTimeUntilReset()` function
+- Integration tests verifying reset countdown appears in full output
+- Mock API responses with different reset timestamps
+- Edge case testing (past timestamps, invalid data)
+
+**Quality Checks:**
+- ✅ TypeScript compiles without errors
+- ✅ ESLint passes
+- ✅ All 50 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Pure functions (no side effects)
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Constants use UPPER_SNAKE_CASE
+
+**Git Commit:** `17e300b` - "feat: add next reset time countdown display"
+
+**Branch:** `feature/slice-4.5-reset-time` (committed and pushed to remote)
+
+---
+
+### SLICE 4.6: Global Installation & Setup Command ✅ **COMPLETE**
+
+**User Value:** Users can install plugin via npm with automatic OpenCode configuration, enabling `/glm_quota` command to work after installation.
+
+**Status:** ✅ **COMPLETE** (2026-01-31)
+**Priority:** Medium (usability enhancement)
+**Estimated Time:** 1-2 days
+
+**Problem Statement:**
+Adding `"@opencode-glm-quota/plugin"` to `opencode.json` tells OpenCode to `npm install` plugin package, BUT:
+- ❌ Agent definition not copied to OpenCode config
+- ❌ Command file not copied to OpenCode config
+- ❌ Skill file not copied to OpenCode config
+
+These files must exist in `~/.config/opencode/` for `/glm_quota` to work.
+
+**Solution:**
+Package includes an installer command that copies `/integration/` files from npm package to user's OpenCode configuration directory. The installer merges agent configuration from `integration/opencode.jsonc` into `~/.config/opencode/opencode.json` using JSONC-safe parsing.
+
+**Installation Flow:**
+```
+1. User adds to opencode.json:
+   "plugins": ["@opencode-glm-quota/plugin"]
+
+2. OpenCode runs: npm install @opencode-glm-quota/plugin
+
+3. User runs installer: npx @opencode-glm-quota/plugin install
+
+4. Files copied:
+   - node_modules/@opencode-glm-quota/plugin/integration/command/glm_quota.md
+      → ~/.config/opencode/command/glm_quota.md
+   - node_modules/@opencode-glm-quota/plugin/integration/opencode.jsonc
+      → ~/.config/opencode/opencode.json (merged safely)
+   - node_modules/@opencode-glm-quota/plugin/integration/skill/glm-quota-skill.md
+      → ~/.config/opencode/skill/glm-quota-skill.md
+
+5. User restarts OpenCode, runs /glm_quota ✅
+```
+
+**Acceptance Criteria:**
+- [x] `package.json` includes `integration/` in `files` field
+- [x] `package.json` includes bin entry for install command
+- [x] `bin/install.js` copies files from npm package to OpenCode config
+- [x] Installer merges `opencode.jsonc` into existing config using JSONC parser
+- [x] Manual `npx @opencode-glm-quota/plugin install` works for user control
+- [x] `npx @opencode-glm-quota/plugin install --force` overwrites existing
+- [x] Documentation updated with installation instructions
+
+**Files to Create:**
+- `integration/opencode.jsonc` - Agent configuration (JSONC)
+- `bin/install.js` - Installer command executable
+
+**Files to Move:**
+- `.opencode/command/glm_quota.md` → `integration/command/glm_quota.md`
+- `.opencode/opencode.json` → `integration/opencode.jsonc`
+- `.opencode/skill/glm-quota-skill.md` → `integration/skill/glm-quota-skill.md`
+- `scripts/query-usage.mjs` → `src/query-usage.ts`
+
+**Files to Modify:**
+- `package.json` - Add bin entry, `jsonc-parser` dependency, include `integration/` in files
+
+**Dependencies:** Slice 1.5 (OpenCode command/skill files already exist)
+
+**Test Strategy:**
+- Manual testing of installer command
+- Verification of file copying to correct locations
+- Testing of config merging (existing config + new agent definition)
+- Test of `--force` flag behavior
+- Validation of OpenCode command discovery after installation
+
+**Git Commit:** `feat: add global installation and setup command`
+
+---
+
+### SLICE 5: Error Handling & Edge Cases
+
+**User Value:** Users see helpful error messages when things go wrong, no crashes or confusing behavior.
+
+**Status:** ⏳ **IN PROGRESS** (2026-01-31)  
+**Priority:** High (production-ready requirement)
+**Estimated Time:** ~7 hours (16 tasks across 6 phases)
+
+**Acceptance Criteria:**
+- [ ] Network errors (timeout, connection refused) caught and handled
+- [ ] Authentication errors (401, 403) display user-friendly message
+- [ ] API errors (429, 500) propagate with clear context
+- [ ] Parse errors (invalid JSON, missing fields) caught and reported
+- [ ] Tokens never appear in error messages (sanitized)
+- [ ] Each error type has dedicated test suite
+- [ ] Integration tests cover error paths
+- [ ] All errors use 60-char boxed format for consistency
+
+**Task Breakdown (16 Tasks, 6 Phases):**
+
+**Phase 1: Setup & Infrastructure (Tasks 1-3)**
+- Task 1: Create `tests/error-handling/` directory structure
+- Task 2: Create error fixtures (`401.json`, `403.json`, `429.json`, `500.json`)
+- Task 3: TDD: Token sanitization utility (test → implement → refactor)
+
+**Phase 2: Network Error Handling (Tasks 4-5)**
+- Task 4: TDD: Network timeout error handling (boxed output, 10s timeout)
+- Task 5: TDD: Network connection errors (ECONNREFUSED, ENOTFOUND)
+
+**Phase 3: Authentication Error Handling (Tasks 6-7)**
+- Task 6: TDD: 401 Unauthorized error (boxed with `/connect` instructions)
+- Task 7: TDD: 403 Forbidden error (boxed with permission message)
+
+**Phase 4: API & Parse Error Handling (Tasks 8-10)**
+- Task 8: TDD: 429 Rate limiting error (boxed with retry guidance)
+- Task 9: TDD: 500+ Server errors (boxed with "try later" message)
+- Task 10: TDD: Invalid JSON parse errors (boxed, sanitized)
+
+**Phase 5: Integration & Consistency (Tasks 11-14)**
+- Task 11: Box all error outputs in `src/index.ts` catch block ✅
+- Task 12: Create `src/utils/error-formatter.ts` (consolidate boxed errors) ✅
+- Task 13: Integration tests: End-to-end error paths (network, auth, API, parse) ✅
+- Task 14: Run full test suite - verify all 50+ existing tests still pass ✅
+
+**Phase 6: Finalization (Tasks 15-16)**
+- Task 15: Update `docs/implementation-plan.md` (mark Slice 5 complete)
+- Task 16: Git commit & push: `feat: comprehensive error handling with token sanitization`
 
 **Files to Create:**
 - `tests/error-handling/network-errors.test.ts`
@@ -37,10 +484,13 @@
 - `tests/error-handling/parse-errors.test.ts`
 - `tests/error-handling/token-sanitization.test.ts`
 - `tests/integration/error-handling.test.ts`
+- `tests/integration/plugin-catch-block.test.ts`
 - `tests/fixtures/api-error-401.json`
 - `tests/fixtures/api-error-403.json`
 - `tests/fixtures/api-error-429.json`
 - `tests/fixtures/api-error-500.json`
+- `tests/fixtures/test-key.pem`
+- `tests/fixtures/test-cert.pem`
 
 **Files to Modify:**
 - `src/api/client.ts` - Add timeout, categorize errors, sanitize tokens
@@ -572,30 +1022,6 @@ Slice 2 (Utils) ───┘                                  │
 ---
 
 ## 11. Recent Updates
-
-### 2026-02-01: Slice 5 Task 13/14 - Integration & Test Verification ✅ **COMPLETE**
-
-**Status:** ✅ COMPLETED (2026-02-01)
-**Branch:** `feature/slice-5-error-handling`
-**Commit:** `15a1abd`, `6408014`
-
-**Implemented:**
-- ✅ Fixed `makeRequest` to call proper error formatters for 401, 403, 429, 500
-- ✅ Stabilized HTTPS tests by adding real self-signed TLS certs under `tests/fixtures/`
-- ✅ Fixed port handling in `src/api/client.ts` to support local test servers
-- ✅ Created `tests/integration/plugin-catch-block.test.ts` for end-to-end catch logic
-- ✅ Verified all 101 tests pass (100% pass rate)
-
-**Test Results:**
-- ✅ 5 new integration tests for error handling
-- ✅ Total: 101 tests passing (96 existing + 5 new)
-- ✅ `http-client.test.ts` fixed and passing with real TLS
-
-**Next Steps:**
-1. Finalize Slice 5 (Phase 6)
-2. Proceed to Slice 6: Refactoring & Optimization
-
----
 
 ### 2026-02-01: Slice 5 Task 8 - 429 Rate Limit Error Handling ✅ **COMPLETE**
 
