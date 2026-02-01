@@ -131,6 +131,33 @@ function formatAuthError(statusCode: number, responseBody: string, authToken: st
 }
 
 /**
+ * Format API error with boxed message
+ * @param statusCode - HTTP status code (429, 500, etc.)
+ * @param responseBody - Response body from API
+ * @param authToken - Auth token to sanitize from error messages
+ * @returns Formatted error with boxed message
+ */
+function formatApiError(statusCode: number, responseBody: string, authToken: string): Error {
+  // Sanitize response body first to prevent token exposure
+  const sanitizedBody = sanitizeToken(responseBody, authToken);
+  let message = '';
+
+  if (statusCode === 429) {
+    // Use friendly message for 429, but include sanitized details if available
+    if (sanitizedBody && sanitizedBody !== 'Too Many Requests') {
+      message = createBoxedError(`Too many requests. Please try again later. Details: ${sanitizedBody}`);
+    } else {
+      message = createBoxedError('Too many requests. Please try again later.');
+    }
+  } else {
+    // For other API errors, use sanitized response body
+    message = createBoxedError(sanitizedBody);
+  }
+
+  return new Error(message);
+}
+
+/**
  * Make HTTPS request to API endpoint
  * @param options - Request options
  * @returns Promise resolving to API response
@@ -213,4 +240,4 @@ async function queryEndpoint(
 }
 
 export type { ApiResponse };
-export { makeRequest, queryEndpoint, formatNetworkError, createBoxedError, formatAuthError };
+export { makeRequest, queryEndpoint, formatNetworkError, createBoxedError, formatAuthError, formatApiError };
