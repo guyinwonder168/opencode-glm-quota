@@ -9,6 +9,12 @@ import { sanitizeToken } from '../utils/error-formatter.js';
 import { BOX_WIDTH } from '../utils/box-constants.js';
 
 /**
+ * Maximum length for response body in parse errors before truncation
+ * Long response bodies are truncated to fit in boxed error format
+ */
+const MAX_PARSE_ERROR_BODY_LENGTH = 200;
+
+/**
  * API response type
  */
 interface ApiResponse {
@@ -65,7 +71,8 @@ function formatNetworkError(error: NetworkError, authToken: string): Error {
 function createBoxedError(message: string): string {
   const width = BOX_WIDTH.TOTAL;
   const padding = BOX_WIDTH.PADDING;
-  const contentWidth = width - (padding * 2) - 2; // -2 for border characters
+  const contentWidth = BOX_WIDTH.CONTENT;
+  const borderChars = BOX_WIDTH.BORDER_CHARS;
 
   const lines: string[] = [];
   const words = message.split(' ');
@@ -74,8 +81,9 @@ function createBoxedError(message: string): string {
   // Word wrap to fit content width
   for (const word of words) {
     // If word is longer than content width, truncate it
+    const ellipsisLength = 3; // Length of "..."
     const truncatedWord = word.length > contentWidth 
-      ? `${word.substring(0, contentWidth - 3)}...` 
+      ? `${word.substring(0, contentWidth - ellipsisLength)}...` 
       : word;
     
     if (currentLine.length + truncatedWord.length + 1 <= contentWidth) {
@@ -90,11 +98,12 @@ function createBoxedError(message: string): string {
   }
 
   // Build boxed output
-  const topBorder = '╔' + '═'.repeat(width - 2) + '╗';
-  const bottomBorder = '╚' + '═'.repeat(width - 2) + '╝';
+  const topBorder = '╔' + '═'.repeat(borderChars) + '╗';
+  const bottomBorder = '╚' + '═'.repeat(borderChars) + '╝';
   const paddedLines = lines.map(line => {
     const leftPad = ' '.repeat(padding);
-    const rightPad = ' '.repeat(Math.max(0, width - 2 - padding - line.length)); // Ensure non-negative
+    // rightPad calculation: total (60) - borders (2) - left pad (2) - content length
+    const rightPad = ' '.repeat(Math.max(0, width - 2 - padding - line.length));
     return '║' + leftPad + line + rightPad + '║';
   });
 
@@ -184,10 +193,10 @@ function formatParseError(responseBody: string, authToken: string): Error {
     return new Error(createBoxedError('Invalid JSON response. The server returned malformed data.'));
   }
   
-  // Truncate extremely long response bodies (keep first 200 chars)
+  // Truncate extremely long response bodies to fit in boxed format
   // createBoxedError will handle word wrapping across multiple lines
-  const bodyToDisplay = sanitizedBody.length > 200 
-    ? `${sanitizedBody.substring(0, 200)}...` 
+  const bodyToDisplay = sanitizedBody.length > MAX_PARSE_ERROR_BODY_LENGTH 
+    ? `${sanitizedBody.substring(0, MAX_PARSE_ERROR_BODY_LENGTH)}...` 
     : sanitizedBody;
   
   const message = createBoxedError(`Invalid JSON response. Details: ${bodyToDisplay}`);
