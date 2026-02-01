@@ -25,7 +25,7 @@ describe('makeRequest', () => {
 
     let serverPort = 0; // Initialize to 0 to avoid "used before assigned" error
     await new Promise<void>((resolve) => {
-      server.listen(0, '127.0.0.1', () => {
+      server.listen(0, 'localhost', () => {
         const address = server.address() as { port: number };
         if (address) {
           serverPort = address.port;
@@ -43,7 +43,7 @@ describe('makeRequest', () => {
 
     try {
       const result = await makeRequest({
-        url: `https://127.0.0.1:${serverPort}/api/monitor/usage/quota/limit`,
+        url: `https://localhost:${serverPort}/api/monitor/usage/quota/limit`,
         authToken
       });
 
