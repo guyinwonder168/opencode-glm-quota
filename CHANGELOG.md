@@ -26,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Slice 5 Task 6 complete: 401 error handling with TDD methodology
 - Test count: 81 tests passing (73 existing + 8 new from Tasks 6 & 7)
 - Files modified: `tests/error-handling/auth-errors.test.ts` (extended), `src/api/client.ts`
-- Commit: TBD - "feat: add 403 forbidden error handling (slice5-07)"
+- Commit: `b726f94` - "feat: add 403 forbidden error handling (slice5-07)"
 
 ---
 

@@ -1024,7 +1024,7 @@ Slice 2 (Utils) ───┘                                  │
 
 **Status:** ✅ COMPLETED (2026-02-01)
 **Branch:** `feature/slice-5-error-handling`
-**Commit:** TBD - "feat: add 403 forbidden error handling (slice5-07)"
+**Commit:** `b726f94` - "feat: add 403 forbidden error handling (slice5-07)"
 
 **Implemented:**
 - ✅ Extended `formatAuthError()` function to handle HTTP 403 responses
