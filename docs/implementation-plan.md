@@ -19,7 +19,7 @@
 | Slice 4: Multiple Endpoints & Display | ✅ **COMPLETE** | 2026-01-18 | - | - |
 | Slice 4.5: Add Next Reset Time | ✅ **COMPLETE** | 2026-01-21 | 13 | N/A |
 | Slice 4.6: Global Installation & Setup Command | ✅ **COMPLETE** | 2026-01-31 | - | - |
-| Slice 5: Error Handling & Edge Cases | 🔄 **IN PROGRESS** | 2026-01-31 | 50 | N/A |
+| Slice 5: Error Handling & Edge Cases | 🔄 **IN PROGRESS** | 2026-02-01 | 77 | N/A |
 | Slice 6: Refactoring & Optimization | ⏳ **TODO** | - | - | - |
 
 **Overall Progress:** 8/9 slices complete (88.9%), Slice 5 in progress (16 tasks)
@@ -1019,6 +1019,46 @@ Slice 2 (Utils) ───┘                                  │
 ---
 
 ## 11. Recent Updates
+
+### 2026-02-01: Slice 5 Task 6 - 401 Unauthorized Error Handling ✅ **COMPLETE**
+
+**Status:** ✅ COMPLETED (2026-02-01)
+**Branch:** `feature/slice-5-error-handling`
+**Commit:** `9cc2186` - "feat: add 401 unauthorized error handling (slice5-06)"
+
+**Implemented:**
+- ✅ `formatAuthError()` function for HTTP 401 responses
+- ✅ User-friendly boxed message: "Authentication failed. Please check your credentials."
+- ✅ Token sanitization applied to prevent credential exposure
+- ✅ 60-character boxed error format for consistency
+- ✅ 4 new tests for auth error handling (all passing)
+
+**Test Results:**
+- ✅ 4 new tests for 401 error handling
+- ✅ Total: 77 tests passing (73 existing + 4 new)
+- ✅ TypeScript compiles without errors
+- ✅ Linting passes (0 errors, 0 warnings)
+
+**Files Modified:**
+- `tests/error-handling/auth-errors.test.ts` (NEW)
+- `src/api/client.ts` (updated with formatAuthError function)
+
+**TDD Methodology:**
+- ✅ RED: Wrote failing tests first (watched them fail)
+- ✅ GREEN: Implemented minimal code to pass tests
+- ✅ REFACTOR: Verified no refactoring needed
+
+**Quality Checks:**
+- ✅ All 77 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Token sanitization verified
+
+**Next Steps:**
+1. Proceed to Task 7: 403 Forbidden error handling
+2. Expected: +4 tests, total ~81 tests passing
+
+---
 
 ### 2026-01-31: Slice 5 Planning - Error Handling & Edge Cases ⏳ **PLANNED**
 

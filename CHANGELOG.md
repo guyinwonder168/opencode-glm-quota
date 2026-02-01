@@ -4,6 +4,24 @@ All notable changes to GLM Status Plugin project will be documented in this file
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- **401 Unauthorized Error Handling** - Graceful authentication error messages:
+  - `formatAuthError()` function for HTTP 401 responses
+  - User-friendly boxed message: "Authentication failed. Please check your credentials."
+  - Token sanitization applied to prevent credential exposure in error details
+  - 60-character boxed error format for consistency
+  - 4 new tests for auth error handling (all passing)
+
+### Technical
+- Slice 5 Task 6 complete: 401 error handling with TDD methodology
+- Test count: 77 tests passing (73 existing + 4 new)
+- Files modified: `tests/error-handling/auth-errors.test.ts` (NEW), `src/api/client.ts`
+- Commit: `9cc2186` - "feat: add 401 unauthorized error handling (slice5-06)"
+
+---
+
 ## [1.4.2] - 2026-01-31
 
 ### Changed
