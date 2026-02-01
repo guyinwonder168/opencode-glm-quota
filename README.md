@@ -235,6 +235,9 @@ npm run clean
 # Run all tests
 npm run test
 
+# Run test suite with coverage
+npm run test:coverage
+
 # Run specific test file
 npm run test -- path/to/test.test.ts
 
