@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **500+ Server Error Handling** - Graceful server error messages:
+  - Extended `formatApiError()` to handle HTTP 500, 502, 503, etc. responses
+  - User-friendly boxed message: "Server error. Please try again later."
+  - Token sanitization applied to prevent credential exposure in error details
+  - 60-character boxed error format for consistency
+  - 4 new tests for 500+ error handling (all passing)
+
 - **429 Rate Limit Error Handling** - Graceful rate limiting error messages:
   - `formatApiError()` function for HTTP 429 responses
   - User-friendly boxed message: "Too many requests. Please try again later."
@@ -28,13 +35,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   - 60-character boxed error format for consistency
   - 4 new tests for auth error handling (all passing)
 
+### Fixed
+- **Box dimension constants**: Replaced hardcoded `60` values with `BOX_WIDTH.TOTAL` constant from `src/utils/box-constants.ts` in all test files for consistency
+
 ### Technical
+- Slice 5 Task 9 complete: 500+ server error handling with TDD methodology
 - Slice 5 Task 8 complete: 429 rate limit error handling with TDD methodology
 - Slice 5 Task 7 complete: 403 Forbidden error handling with TDD methodology
 - Slice 5 Task 6 complete: 401 error handling with TDD methodology
-- Test count: 85 tests passing (81 existing + 4 new from Task 8)
-- Files modified: `tests/error-handling/api-errors.test.ts` (NEW), `src/api/client.ts`
-- Commit: `49b7520` - "feat: add 429 rate limit error handling (slice5-08)"
+- Test count: 89 tests passing (85 existing + 4 new from Task 9)
+- Files modified: `tests/error-handling/api-errors.test.ts`, `tests/error-handling/auth-errors.test.ts`, `src/api/client.ts`, `AGENTS.md`
+- Added guideline in AGENTS.md: Always use `BOX_WIDTH` constants instead of hardcoding dimensions
+- Commit: `346ade7` - "feat: add 500+ server error handling (slice5-09)"
 
 ---
 

@@ -73,11 +73,16 @@ function createBoxedError(message: string): string {
 
   // Word wrap to fit content width
   for (const word of words) {
-    if (currentLine.length + word.length + 1 <= contentWidth) {
-      currentLine += (currentLine ? ' ' : '') + word;
+    // If word is longer than content width, truncate it
+    const truncatedWord = word.length > contentWidth 
+      ? `${word.substring(0, contentWidth - 3)}...` 
+      : word;
+    
+    if (currentLine.length + truncatedWord.length + 1 <= contentWidth) {
+      currentLine += (currentLine ? ' ' : '') + truncatedWord;
     } else {
-      lines.push(currentLine);
-      currentLine = word;
+      if (currentLine) lines.push(currentLine);
+      currentLine = truncatedWord;
     }
   }
   if (currentLine) {
@@ -89,7 +94,7 @@ function createBoxedError(message: string): string {
   const bottomBorder = '╚' + '═'.repeat(width - 2) + '╝';
   const paddedLines = lines.map(line => {
     const leftPad = ' '.repeat(padding);
-    const rightPad = ' '.repeat(width - 2 - padding - line.length);
+    const rightPad = ' '.repeat(Math.max(0, width - 2 - padding - line.length)); // Ensure non-negative
     return '║' + leftPad + line + rightPad + '║';
   });
 
@@ -165,6 +170,31 @@ function formatApiError(statusCode: number, responseBody: string, authToken: str
 }
 
 /**
+ * Format JSON parse error with boxed message
+ * @param responseBody - Response body that failed to parse
+ * @param authToken - Auth token to sanitize from error messages
+ * @returns Formatted error with boxed message
+ */
+function formatParseError(responseBody: string, authToken: string): Error {
+  // Sanitize response body first to prevent token exposure
+  const sanitizedBody = sanitizeToken(responseBody, authToken);
+  
+  // Use simple message if body is empty
+  if (!sanitizedBody) {
+    return new Error(createBoxedError('Invalid JSON response. The server returned malformed data.'));
+  }
+  
+  // Truncate extremely long response bodies (keep first 200 chars)
+  // createBoxedError will handle word wrapping across multiple lines
+  const bodyToDisplay = sanitizedBody.length > 200 
+    ? `${sanitizedBody.substring(0, 200)}...` 
+    : sanitizedBody;
+  
+  const message = createBoxedError(`Invalid JSON response. Details: ${bodyToDisplay}`);
+  return new Error(message);
+}
+
+/**
  * Make HTTPS request to API endpoint
  * @param options - Request options
  * @returns Promise resolving to API response
@@ -205,7 +235,8 @@ function makeRequest(options: RequestOptions): Promise<ApiResponse> {
           const json = JSON.parse(data) as ApiResponse;
           resolve(json);
         } catch {
-          reject(new Error(`Invalid JSON response: ${data}`));
+          // Use formatParseError for invalid JSON responses
+          reject(formatParseError(data, options.authToken));
         }
       });
     });
@@ -247,4 +278,4 @@ async function queryEndpoint(
 }
 
 export type { ApiResponse };
-export { makeRequest, queryEndpoint, formatNetworkError, createBoxedError, formatAuthError, formatApiError };
+export { makeRequest, queryEndpoint, formatNetworkError, createBoxedError, formatAuthError, formatApiError, formatParseError };
