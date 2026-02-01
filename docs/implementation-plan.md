@@ -1020,6 +1020,48 @@ Slice 2 (Utils) ───┘                                  │
 
 ## 11. Recent Updates
 
+### 2026-02-01: Slice 5 Task 7 - 403 Forbidden Error Handling ✅ **COMPLETE**
+
+**Status:** ✅ COMPLETED (2026-02-01)
+**Branch:** `feature/slice-5-error-handling`
+**Commit:** TBD - "feat: add 403 forbidden error handling (slice5-07)"
+
+**Implemented:**
+- ✅ Extended `formatAuthError()` function to handle HTTP 403 responses
+- ✅ User-friendly boxed message: "Access denied. You don't have permission."
+- ✅ Token sanitization applied to prevent credential exposure
+- ✅ 60-character boxed error format for consistency
+- ✅ 4 new tests for 403 error handling (all passing)
+
+**Test Results:**
+- ✅ 4 new tests for 403 error handling
+- ✅ Total: 81 tests passing (77 existing + 4 new)
+- ✅ TypeScript compiles without errors
+- ✅ Linting passes (0 errors, 0 warnings)
+
+**Files Modified:**
+- `tests/error-handling/auth-errors.test.ts` (extended with 403 tests)
+- `src/api/client.ts` (updated formatAuthError with 403 handling)
+
+**TDD Methodology:**
+- ✅ RED: Wrote failing tests first (watched them fail)
+- ✅ GREEN: Implemented minimal code to pass tests
+- ✅ REFACTOR: Verified code quality (lint, TypeScript compile)
+
+**Quality Checks:**
+- ✅ All 81 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Token sanitization verified
+- ✅ Consistent with 401 error handling pattern
+
+**Next Steps:**
+1. Proceed to Phase 4: API & Parse Error Handling (Tasks 8-10)
+2. Task 8: 429 Rate limiting error
+3. Expected: +4 tests, total ~85 tests passing
+
+---
+
 ### 2026-02-01: Slice 5 Task 6 - 401 Unauthorized Error Handling ✅ **COMPLETE**
 
 **Status:** ✅ COMPLETED (2026-02-01)

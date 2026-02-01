@@ -115,6 +115,13 @@ function formatAuthError(statusCode: number, responseBody: string, authToken: st
     } else {
       message = createBoxedError('Authentication failed. Please check your credentials.');
     }
+  } else if (statusCode === 403) {
+    // Use friendly message for 403, but include sanitized details if available
+    if (sanitizedBody && sanitizedBody !== 'Forbidden') {
+      message = createBoxedError(`Access denied. You don't have permission. Details: ${sanitizedBody}`);
+    } else {
+      message = createBoxedError("Access denied. You don't have permission.");
+    }
   } else {
     // For other auth errors, use sanitized response body
     message = createBoxedError(sanitizedBody);

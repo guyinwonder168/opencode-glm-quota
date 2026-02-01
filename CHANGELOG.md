@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **403 Forbidden Error Handling** - Graceful permission error messages:
+  - Extended `formatAuthError()` to handle HTTP 403 responses
+  - User-friendly boxed message: "Access denied. You don't have permission."
+  - Token sanitization applied to prevent credential exposure in error details
+  - 60-character boxed error format for consistency
+  - 4 new tests for 403 error handling (all passing)
+
 - **401 Unauthorized Error Handling** - Graceful authentication error messages:
   - `formatAuthError()` function for HTTP 401 responses
   - User-friendly boxed message: "Authentication failed. Please check your credentials."
@@ -15,10 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   - 4 new tests for auth error handling (all passing)
 
 ### Technical
+- Slice 5 Task 7 complete: 403 Forbidden error handling with TDD methodology
 - Slice 5 Task 6 complete: 401 error handling with TDD methodology
-- Test count: 77 tests passing (73 existing + 4 new)
-- Files modified: `tests/error-handling/auth-errors.test.ts` (NEW), `src/api/client.ts`
-- Commit: `9cc2186` - "feat: add 401 unauthorized error handling (slice5-06)"
+- Test count: 81 tests passing (73 existing + 8 new from Tasks 6 & 7)
+- Files modified: `tests/error-handling/auth-errors.test.ts` (extended), `src/api/client.ts`
+- Commit: TBD - "feat: add 403 forbidden error handling (slice5-07)"
 
 ---
 
