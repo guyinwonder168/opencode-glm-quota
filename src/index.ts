@@ -33,6 +33,12 @@ const CANDIDATE_PROVIDER_IDS = [
   'zhipuai'
 ] as const;
 
+const DEFAULT_TOKEN_LIMIT = 40000000;
+const TOKEN_LIMIT_LABEL = 'Token usage(5 Hour)';
+const MCP_LIMIT_LABEL = 'MCP usage(1 Month)';
+const TOKEN_LIMIT_TYPE = 'TOKENS_LIMIT';
+const TIME_LIMIT_TYPE = 'TIME_LIMIT';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -196,17 +202,17 @@ function processQuotaLimit(data: Record<string, unknown>): ProcessedQuotaLimit {
       if (typeof item === 'object' && item !== null) {
         const limit = item as Record<string, unknown>;
 
-        if (limit.type === 'TOKENS_LIMIT') {
+        if (limit.type === TOKEN_LIMIT_TYPE) {
           return {
-            type: 'Token usage(5 Hour)',
+            type: TOKEN_LIMIT_LABEL,
             percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
             nextResetTime: limit.nextResetTime as number | undefined
           };
         }
 
-        if (limit.type === 'TIME_LIMIT') {
+        if (limit.type === TIME_LIMIT_TYPE) {
           return {
-            type: 'MCP usage(1 Month)',
+            type: MCP_LIMIT_LABEL,
             percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
             currentValue: limit.currentValue,
             total: limit.usage,
@@ -236,15 +242,15 @@ function formatNumber(num: number): string {
  * Get token limit information from quota data
  */
 function getTokenLimitInfo(quotaData: ProcessedQuotaLimit | null): { tokenLimit: number; tokenPct: number } {
-  let tokenLimit = 40000000; // Default 40M
+  let tokenLimit = DEFAULT_TOKEN_LIMIT;
   let tokenPct = 0;
 
   if (!quotaData?.limits) return { tokenLimit, tokenPct };
 
   for (const limit of quotaData.limits) {
-    if (limit.type === 'Token usage(5 Hour)') {
+    if (limit.type === TOKEN_LIMIT_LABEL) {
       tokenPct = typeof limit.percentage === 'number' ? limit.percentage : 0;
-      tokenLimit = (limit.total as number) || 40000000;
+      tokenLimit = (limit.total as number) || DEFAULT_TOKEN_LIMIT;
       break;
     }
   }
@@ -329,7 +335,7 @@ function formatMcpUsageDetailLines(quotaData: ProcessedQuotaLimit | null): strin
   if (!quotaData?.limits) return [];
 
   for (const limit of quotaData.limits) {
-    if (limit.type === 'MCP usage(1 Month)' && limit.usageDetails) {
+    if (limit.type === MCP_LIMIT_LABEL && limit.usageDetails) {
       const details = limit.usageDetails as unknown as Array<{modelCode: string; usage: number}>;
       return ['  MCP Tool Details:', ...formatMcpToolLines(details)];
     }
