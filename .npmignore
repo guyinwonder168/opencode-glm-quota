@@ -13,7 +13,7 @@ CHANGELOG.md
 CONTRIBUTING.md
 
 # CI/CD
-.github/
+# .github/ (removed to enable GitHub Packages detection)
 
 # IDE
 .vscode/
