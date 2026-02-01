@@ -1020,6 +1020,47 @@ Slice 2 (Utils) ───┘                                  │
 
 ## 11. Recent Updates
 
+### 2026-02-01: Slice 5 Task 8 - 429 Rate Limit Error Handling ✅ **COMPLETE**
+
+**Status:** ✅ COMPLETED (2026-02-01)
+**Branch:** `feature/slice-5-error-handling`
+**Commit:** `49b7520` - "feat: add 429 rate limit error handling (slice5-08)"
+
+**Implemented:**
+- ✅ `formatApiError()` function for HTTP 429 responses
+- ✅ User-friendly boxed message: "Too many requests. Please try again later."
+- ✅ Token sanitization applied to prevent credential exposure
+- ✅ 60-character boxed error format for consistency
+- ✅ 4 new tests for 429 error handling (all passing)
+
+**Test Results:**
+- ✅ 4 new tests for 429 error handling
+- ✅ Total: 85 tests passing (81 existing + 4 new)
+- ✅ TypeScript compiles without errors
+- ✅ Linting passes (0 errors, 0 warnings)
+
+**Files Modified:**
+- `tests/error-handling/api-errors.test.ts` (NEW)
+- `src/api/client.ts` (added formatApiError function)
+
+**TDD Methodology:**
+- ✅ RED: Wrote failing tests first (watched them fail)
+- ✅ GREEN: Implemented minimal code to pass tests
+- ✅ REFACTOR: Verified code quality (lint, TypeScript compile)
+
+**Quality Checks:**
+- ✅ All 85 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Token sanitization verified
+- ✅ Consistent with auth error handling pattern
+
+**Next Steps:**
+1. Proceed to Task 9: 500+ Server error handling
+2. Expected: +4 tests, total ~89 tests passing
+
+---
+
 ### 2026-02-01: Slice 5 Task 7 - 403 Forbidden Error Handling ✅ **COMPLETE**
 
 **Status:** ✅ COMPLETED (2026-02-01)

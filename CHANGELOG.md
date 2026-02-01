@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **429 Rate Limit Error Handling** - Graceful rate limiting error messages:
+  - `formatApiError()` function for HTTP 429 responses
+  - User-friendly boxed message: "Too many requests. Please try again later."
+  - Token sanitization applied to prevent credential exposure in error details
+  - 60-character boxed error format for consistency
+  - 4 new tests for 429 error handling (all passing)
+
 - **403 Forbidden Error Handling** - Graceful permission error messages:
   - Extended `formatAuthError()` to handle HTTP 403 responses
   - User-friendly boxed message: "Access denied. You don't have permission."
@@ -22,11 +29,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   - 4 new tests for auth error handling (all passing)
 
 ### Technical
+- Slice 5 Task 8 complete: 429 rate limit error handling with TDD methodology
 - Slice 5 Task 7 complete: 403 Forbidden error handling with TDD methodology
 - Slice 5 Task 6 complete: 401 error handling with TDD methodology
-- Test count: 81 tests passing (73 existing + 8 new from Tasks 6 & 7)
-- Files modified: `tests/error-handling/auth-errors.test.ts` (extended), `src/api/client.ts`
-- Commit: `b726f94` - "feat: add 403 forbidden error handling (slice5-07)"
+- Test count: 85 tests passing (81 existing + 4 new from Task 8)
+- Files modified: `tests/error-handling/api-errors.test.ts` (NEW), `src/api/client.ts`
+- Commit: `49b7520` - "feat: add 429 rate limit error handling (slice5-08)"
 
 ---
 
