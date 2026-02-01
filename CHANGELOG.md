@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-02-02
+
 ### Changed
 - Refactored output formatting helpers in `src/index.ts` for clearer model/tool usage rendering.
 - Consolidated repeated error-detail formatting logic in `src/api/client.ts`.
