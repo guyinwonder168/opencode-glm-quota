@@ -7,6 +7,7 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
 import { formatNetworkError, createBoxedError } from '../../src/api/client.js';
+import { BOX_WIDTH } from '../../src/utils/box-constants.js';
 
 /**
  * Network error with code property
@@ -86,8 +87,8 @@ describe('Network Error Handling', () => {
 
       // Assert
       const lines = boxed.split('\n');
-      assert.strictEqual(lines[0].length, 60); // Top border
-      assert.strictEqual(lines[lines.length - 1].length, 60); // Bottom border
+      assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL); // Top border
+      assert.strictEqual(lines[lines.length - 1].length, BOX_WIDTH.TOTAL); // Bottom border
     });
 
     it('should include box drawing characters', () => {
@@ -114,7 +115,7 @@ describe('Network Error Handling', () => {
       const lines = boxed.split('\n');
       assert.ok(lines.length > 3); // Top + content lines + bottom
       lines.forEach(line => {
-        assert.strictEqual(line.length, 60);
+        assert.strictEqual(line.length, BOX_WIDTH.TOTAL);
       });
     });
   });

@@ -18,6 +18,7 @@ import { getTimeWindow, getTimeWindowQueryParams } from "./utils/time-window.js"
 import { formatProgressLine } from "./utils/progress-bar.js";
 import { formatTimeUntilReset } from "./utils/reset-timer.js";
 import { BOX_WIDTH, HEADER } from "./utils/box-constants.js";
+import { createBoxedError } from "./utils/error-formatter.js";
 
 // ============================================================================
 // CONSTANTS
@@ -679,7 +680,14 @@ export const GlmQuotaPlugin: Plugin = async () => {
             return await queryAllUsage(credentials);
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            return `❌ Error: ${errorMessage}`;
+            
+            // If the error message is already boxed (starts with top border), return it as is
+            if (errorMessage.trim().startsWith('╔') && errorMessage.includes('╚')) {
+              return errorMessage;
+            }
+            
+            // Otherwise, wrap the raw error in a box
+            return createBoxedError(`❌ Error: ${errorMessage}`);
           }
         }
       })
