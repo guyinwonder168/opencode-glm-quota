@@ -339,7 +339,8 @@ function isApiResponse(data: unknown): data is ApiResponse {
 
 **Reference:**
 - Implementation plan: `docs/implementation-plan.md` - Follows TDD with vertical slicing
-- Code standards: `.opencode/context/core/standards/code.md` - Detailed principles above
+- ALL context needed for OpenAgents: `/home/eddy/distrobox/box-go-debian-home/.config/opencode/context/` - find the needed context here if you didnt found it in the project folder
+- Code standards: `/home/eddy/distrobox/box-go-debian-home/.config/opencode/context/core/standards/code.md` - Detailed principles above
 
 ### Plugin Architecture (OpenCode Plugin)
 

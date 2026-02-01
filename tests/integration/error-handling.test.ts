@@ -1,4 +1,4 @@
-import { describe, test, mock } from 'node:test';
+import { describe, test } from 'node:test';
 import * as assert from 'node:assert';
 import { GlmQuotaPlugin } from '../../src/index.js';
 import { BOX_WIDTH } from '../../src/utils/box-constants.js';
@@ -10,28 +10,28 @@ describe('Integration: Error Handling in src/index.ts', () => {
 
     // Mock Date to throw
     const originalDate = global.Date;
-    
+
     try {
-        // We overwrite global.Date. 
-        // Note: We must ensure it's still a constructor.
-        global.Date = class extends originalDate {
-            constructor(...args: any[]) {
-                super(...args);
-                throw new Error('Date failure');
-            }
-        } as any;
+      class ThrowingDate extends Date {
+        constructor(...args: ConstructorParameters<typeof Date>) {
+          super(...args);
+          throw new Error('Date failure');
+        }
+      }
 
-        // Create plugin instance
-        const plugin = await GlmQuotaPlugin({} as any);
-        const tool = plugin.tool!.glm_quota;
+      global.Date = ThrowingDate as DateConstructor;
 
-        const result = await (tool as any).execute();
-        
-        const lines = result.split('\n');
-        assert.ok(result.includes('╔'), 'Output should contain top border');
-        assert.ok(result.includes('╚'), 'Output should contain bottom border');
-        assert.ok(result.includes('Date failure'), `Output should contain error message. Got: ${result}`);
-        assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL, 'Box width should match');
+      // Create plugin instance
+      const plugin = await GlmQuotaPlugin({} as any);
+      const tool = plugin.tool!.glm_quota;
+
+      const result = await (tool as any).execute();
+
+      const lines = result.split('\n');
+      assert.ok(result.includes('╔'), 'Output should contain top border');
+      assert.ok(result.includes('╚'), 'Output should contain bottom border');
+      assert.ok(result.includes('Date failure'), `Output should contain error message. Got: ${result}`);
+      assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL, 'Box width should match');
     } finally {
       // Cleanup
       global.Date = originalDate;

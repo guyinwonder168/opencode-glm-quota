@@ -680,14 +680,14 @@ export const GlmQuotaPlugin: Plugin = async () => {
             return await queryAllUsage(credentials);
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            
+
             // If the error message is already boxed (starts with top border), return it as is
             if (errorMessage.trim().startsWith('╔') && errorMessage.includes('╚')) {
               return errorMessage;
             }
-            
+
             // Otherwise, wrap the raw error in a box
-            return createBoxedError(`❌ Error: ${errorMessage}`);
+            return createBoxedError(errorMessage);
           }
         }
       })
