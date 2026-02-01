@@ -117,4 +117,4 @@ temp/
 *.session.json
 
 # OpenCode - keep only our plugin files, ignore the rest
-.opencode
+.opencodeopencode-glm-quota.wiki/
