@@ -638,6 +638,9 @@ Before creating a GitHub release:
 - ❌ Adding "Bearer " prefix to Authorization header
 - ❌ Using single fabricated endpoint instead of three actual endpoints
 - ❌ Missing URL encoding for query parameters
+- ❌ Hardcoding HTTPS port to 443 in tests (use URL port for local test servers)
 - ❌ Not handling missing credentials gracefully
 - ❌ Forgetting to pad strings in ASCII output
 - ❌ Assuming specific auth.json structure (use flexible discovery)
+
+- **Known Issue: HTTPS server binding** - When using `https.createServer()` in tests, binding to `0.0.0.0` causes ECONNREFUSED errors on some systems. **Solution:** Bind to `127.0.0.1` instead of `0.0.0.0`. Also add a short delay (50ms) after `server.listen()` to ensure server is fully initialized before making requests.

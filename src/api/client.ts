@@ -172,9 +172,10 @@ function makeRequest(options: RequestOptions): Promise<ApiResponse> {
       ? `${parsedUrl.pathname}?${options.queryParams}` 
       : parsedUrl.pathname;
 
+    const port = parsedUrl.port ? Number(parsedUrl.port) : 443;
     const httpsOptions: https.RequestOptions = {
       hostname: parsedUrl.hostname,
-      port: 443,
+      port,
       path: fullPath,
       method: 'GET',
       headers: {
@@ -193,7 +194,18 @@ function makeRequest(options: RequestOptions): Promise<ApiResponse> {
 
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+          // Use appropriate error formatter based on status code
+          const statusCode = res.statusCode!;
+          
+          if (statusCode === 401 || statusCode === 403) {
+            reject(formatAuthError(statusCode, data, options.authToken));
+          } else if (statusCode >= 400 && statusCode < 500) {
+            // 429 and other client errors
+            reject(formatApiError(statusCode, data, options.authToken));
+          } else {
+            // 500+ server errors
+            reject(formatApiError(statusCode, data, options.authToken));
+          }
           return;
         }
 
