@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Technical
 - Centralized quota limit constants to UPPER_SNAKE_CASE defaults.
 - Tightened integration test typing by removing `any` usage.
+- Added explicit workflow permissions for CI and SonarCloud workflows.
 
 ### Added
 - **Integration error coverage (catch block)**
