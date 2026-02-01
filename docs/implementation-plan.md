@@ -760,7 +760,7 @@ npm run test -- --watch
 
 ```
 Slice 1 (Auth) ───┐
-                  ├───> Slice 1.5 (Command/Skill) ───┐
+                  ├───> Slice 1.5 (Command/Skill) ────┐
 Slice 2 (Utils) ───┘                                  │
                                                       ├───> Slice 3 (Single Endpoint)
                                                               │

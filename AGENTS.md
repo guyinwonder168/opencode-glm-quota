@@ -209,6 +209,23 @@ function formatDateTime(date: Date): string {
 - Pad strings to fixed width: `text.padEnd(width)`
 - Progress bars: `#` for filled, `-` for empty (ASCII to avoid terminal double-width issues)
 - Truncate long output with ellipsis `...`
+- **CRITICAL**: Always use `BOX_WIDTH` constants from `src/utils/box-constants.ts` instead of hardcoding dimensions:
+  - `BOX_WIDTH.TOTAL` (60) - Total line width
+  - `BOX_WIDTH.CONTENT` (56) - Available content width
+  - `BOX_WIDTH.BORDER_CHARS` (58) - Border character count
+  - `BOX_WIDTH.PADDING` (2) - Left/right padding
+- Import in tests: `import { BOX_WIDTH } from '../../src/utils/box-constants.js'`
+
+```typescript
+// ❌ WRONG - Hardcoded dimensions
+assert.strictEqual(lines[0].length, 60);
+const contentWidth = 56;
+
+// ✅ CORRECT - Use constants
+import { BOX_WIDTH } from '../../src/utils/box-constants.js';
+assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL);
+const contentWidth = BOX_WIDTH.CONTENT;
+```
 
 ### Comments & Documentation
 - Use JSDoc-style comments for exported functions

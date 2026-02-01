@@ -7,6 +7,7 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
 import { formatAuthError } from '../../src/api/client.js';
+import { BOX_WIDTH } from '../../src/utils/box-constants.js';
 
 describe('Authentication Error Handling', () => {
   describe('formatAuthError - 401 Unauthorized', () => {
@@ -65,8 +66,8 @@ describe('Authentication Error Handling', () => {
 
       // Assert
       const lines = formatted.message.split('\n');
-      assert.strictEqual(lines[0].length, 60); // Top border
-      assert.strictEqual(lines[lines.length - 1].length, 60); // Bottom border
+      assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL); // Top border
+      assert.strictEqual(lines[lines.length - 1].length, BOX_WIDTH.TOTAL); // Bottom border
     });
   });
 
@@ -126,8 +127,8 @@ describe('Authentication Error Handling', () => {
 
       // Assert
       const lines = formatted.message.split('\n');
-      assert.strictEqual(lines[0].length, 60); // Top border
-      assert.strictEqual(lines[lines.length - 1].length, 60); // Bottom border
+      assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL); // Top border
+      assert.strictEqual(lines[lines.length - 1].length, BOX_WIDTH.TOTAL); // Bottom border
     });
   });
 });

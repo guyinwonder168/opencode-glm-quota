@@ -149,6 +149,13 @@ function formatApiError(statusCode: number, responseBody: string, authToken: str
     } else {
       message = createBoxedError('Too many requests. Please try again later.');
     }
+  } else if (statusCode >= 500) {
+    // Use friendly message for 500+ server errors
+    if (sanitizedBody && !['Internal Server Error', 'Bad Gateway', 'Service Unavailable', 'Gateway Timeout'].includes(sanitizedBody)) {
+      message = createBoxedError(`Server error. Please try again later. Details: ${sanitizedBody}`);
+    } else {
+      message = createBoxedError('Server error. Please try again later.');
+    }
   } else {
     // For other API errors, use sanitized response body
     message = createBoxedError(sanitizedBody);
