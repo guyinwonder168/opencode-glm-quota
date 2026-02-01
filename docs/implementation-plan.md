@@ -20,9 +20,9 @@
 | Slice 4.5: Add Next Reset Time | ✅ **COMPLETE** | 2026-01-21 | 13 | N/A |
 | Slice 4.6: Global Installation & Setup Command | ✅ **COMPLETE** | 2026-01-31 | - | - |
 | Slice 5: Error Handling & Edge Cases | ✅ **COMPLETE** | 2026-02-01 | 101 | N/A |
-| Slice 6: Refactoring & Optimization | ⏳ **TODO** | - | - | - |
+| Slice 6: Refactoring & Optimization | 🔄 **IN PROGRESS** | 2026-02-01 | - | - |
 
-**Overall Progress:** 8/9 slices complete (88.9%), Slice 6 pending
+**Overall Progress:** 8/9 slices complete (88.9%), Slice 6 in progress
 
 ---
 
@@ -523,6 +523,8 @@ Package includes an installer command that copies `/integration/` files from npm
 
 **User Value:** Code is maintainable, performant, and follows best practices.
 
+**Status:** 🔄 **IN PROGRESS** (2026-02-01)
+
 **Acceptance Criteria:**
 - [ ] Code follows AGENTS.md style guidelines
 - [ ] Type safety maximized (no `any` types)
@@ -533,6 +535,14 @@ Package includes an installer command that copies `/integration/` files from npm
 - [ ] All lint checks pass
 - [ ] TypeScript compiles without errors
 - [ ] Documentation updated
+
+**Task Breakdown (Draft):**
+- Task 1: Audit `src/index.ts` for oversized functions and split into helpers
+- Task 2: Remove remaining `any` types in source and tests
+- Task 3: Normalize constants to UPPER_SNAKE_CASE where needed
+- Task 4: Review error formatting pipeline for duplication
+- Task 5: Update `README.md` and `CHANGELOG.md` for release readiness
+- Task 6: Run `npm run lint`, `npm run build`, `npm test`
 
 **Files to Modify:**
 - `src/index.ts` (refactor for clarity)

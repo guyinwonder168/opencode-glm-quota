@@ -3,6 +3,11 @@ import * as assert from 'node:assert';
 import { GlmQuotaPlugin } from '../../src/index.js';
 import { BOX_WIDTH } from '../../src/utils/box-constants.js';
 
+type PluginContext = Parameters<typeof GlmQuotaPlugin>[0];
+type ToolExecutor = {
+  execute: (args?: Record<string, unknown>, context?: Record<string, unknown>) => Promise<string> | string;
+};
+
 describe('Integration: Plugin Error Catch Block', () => {
   describe('Global Error Catch Behavior', () => {
     test('should box generic Error objects', async () => {
@@ -11,7 +16,7 @@ describe('Integration: Plugin Error Catch Block', () => {
 
       try {
         // Create plugin instance
-        const plugin = await GlmQuotaPlugin({} as any);
+        const plugin = await GlmQuotaPlugin({} as unknown as PluginContext);
         const tool = plugin.tool!.glm_quota;
 
         // Mock Date constructor to throw an error
@@ -25,9 +30,9 @@ describe('Integration: Plugin Error Catch Block', () => {
             }
           }
 
-          global.Date = ThrowingDate as any;
+          global.Date = ThrowingDate as unknown as DateConstructor;
 
-          const result = await (tool as any).execute();
+          const result = await (tool as unknown as ToolExecutor).execute();
 
           // Verify boxed error format
           const lines = result.split('\n');
@@ -47,7 +52,7 @@ describe('Integration: Plugin Error Catch Block', () => {
       process.env.ZAI_API_KEY = 'test-token';
 
       try {
-        const plugin = await GlmQuotaPlugin({} as any);
+        const plugin = await GlmQuotaPlugin({} as unknown as PluginContext);
         const tool = plugin.tool!.glm_quota;
 
         const originalDate = global.Date;
@@ -61,9 +66,9 @@ describe('Integration: Plugin Error Catch Block', () => {
             }
           }
 
-          global.Date = ThrowingDate as any;
+          global.Date = ThrowingDate as unknown as DateConstructor;
 
-          const result = await (tool as any).execute();
+          const result = await (tool as unknown as ToolExecutor).execute();
 
           const lines = result.split('\n');
           assert.ok(result.includes('╔'), 'Output should contain top border');
@@ -82,7 +87,7 @@ describe('Integration: Plugin Error Catch Block', () => {
       process.env.ZAI_API_KEY = 'test-token';
 
       try {
-        const plugin = await GlmQuotaPlugin({} as any);
+        const plugin = await GlmQuotaPlugin({} as unknown as PluginContext);
         const tool = plugin.tool!.glm_quota;
 
         const originalDate = global.Date;
@@ -96,9 +101,9 @@ describe('Integration: Plugin Error Catch Block', () => {
             }
           }
 
-          global.Date = ThrowingDate as any;
+          global.Date = ThrowingDate as unknown as DateConstructor;
 
-          const result = await (tool as any).execute();
+          const result = await (tool as unknown as ToolExecutor).execute();
 
           const lines = result.split('\n');
           assert.ok(result.includes('╔'), 'Output should contain top border');
@@ -119,7 +124,7 @@ describe('Integration: Plugin Error Catch Block', () => {
       process.env.ZAI_API_KEY = 'test-token';
 
       try {
-        const plugin = await GlmQuotaPlugin({} as any);
+        const plugin = await GlmQuotaPlugin({} as unknown as PluginContext);
         const tool = plugin.tool!.glm_quota;
 
         const originalDate = global.Date;
@@ -132,9 +137,9 @@ describe('Integration: Plugin Error Catch Block', () => {
             }
           }
 
-          global.Date = ThrowingDate as any;
+          global.Date = ThrowingDate as unknown as DateConstructor;
 
-          const result = await (tool as any).execute();
+          const result = await (tool as unknown as ToolExecutor).execute();
 
           const lines = result.split('\n');
 
