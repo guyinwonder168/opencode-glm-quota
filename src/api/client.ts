@@ -6,7 +6,6 @@
 import * as https from 'node:https';
 import type { Endpoints } from './endpoints.js';
 import { sanitizeToken, createBoxedError } from '../utils/error-formatter.js';
-import { BOX_WIDTH } from '../utils/box-constants.js';
 
 /**
  * HTTP request timeout in milliseconds (10 seconds)
