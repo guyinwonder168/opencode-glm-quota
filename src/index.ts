@@ -33,6 +33,12 @@ const CANDIDATE_PROVIDER_IDS = [
   'zhipuai'
 ] as const;
 
+const DEFAULT_TOKEN_LIMIT = 40000000;
+const TOKEN_LIMIT_LABEL = 'Token usage(5 Hour)';
+const MCP_LIMIT_LABEL = 'MCP usage(1 Month)';
+const TOKEN_LIMIT_TYPE = 'TOKENS_LIMIT';
+const TIME_LIMIT_TYPE = 'TIME_LIMIT';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -196,17 +202,17 @@ function processQuotaLimit(data: Record<string, unknown>): ProcessedQuotaLimit {
       if (typeof item === 'object' && item !== null) {
         const limit = item as Record<string, unknown>;
 
-        if (limit.type === 'TOKENS_LIMIT') {
+        if (limit.type === TOKEN_LIMIT_TYPE) {
           return {
-            type: 'Token usage(5 Hour)',
+            type: TOKEN_LIMIT_LABEL,
             percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
             nextResetTime: limit.nextResetTime as number | undefined
           };
         }
 
-        if (limit.type === 'TIME_LIMIT') {
+        if (limit.type === TIME_LIMIT_TYPE) {
           return {
-            type: 'MCP usage(1 Month)',
+            type: MCP_LIMIT_LABEL,
             percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
             currentValue: limit.currentValue,
             total: limit.usage,
@@ -236,15 +242,15 @@ function formatNumber(num: number): string {
  * Get token limit information from quota data
  */
 function getTokenLimitInfo(quotaData: ProcessedQuotaLimit | null): { tokenLimit: number; tokenPct: number } {
-  let tokenLimit = 40000000; // Default 40M
+  let tokenLimit = DEFAULT_TOKEN_LIMIT;
   let tokenPct = 0;
 
   if (!quotaData?.limits) return { tokenLimit, tokenPct };
 
   for (const limit of quotaData.limits) {
-    if (limit.type === 'Token usage(5 Hour)') {
+    if (limit.type === TOKEN_LIMIT_LABEL) {
       tokenPct = typeof limit.percentage === 'number' ? limit.percentage : 0;
-      tokenLimit = (limit.total as number) || 40000000;
+      tokenLimit = (limit.total as number) || DEFAULT_TOKEN_LIMIT;
       break;
     }
   }
@@ -265,34 +271,22 @@ function formatMcpToolLines(details: Array<{modelCode: string; usage: number}>):
   return lines;
 }
 
-/**
- * Format model usage data as readable lines
- */
-function formatModelUsage(
-  data: Record<string, unknown>,
-  quotaData: ProcessedQuotaLimit | null
-): string[] {
+function formatTokenUsageLines(tokens: number, tokenLimit: number, tokenPct: number): string[] {
+  const pct24h = Math.round((tokens / tokenLimit) * 100);
+  return [
+    `  Total Tokens (24h): ${formatNumber(tokens)} (${pct24h}% of 5h limit)`,
+    `  5h Window Usage: ${tokenPct}% of ${formatNumber(tokenLimit)}`
+  ];
+}
+
+function formatModelUsageLines(totalUsage: Record<string, unknown>, quotaData: ProcessedQuotaLimit | null): string[] {
   const lines: string[] = [];
-  const totalUsage = data.totalUsage as Record<string, unknown> | undefined;
-
-  // Get token limit info from quota
   const { tokenLimit, tokenPct } = getTokenLimitInfo(quotaData);
-
-  if (!totalUsage) {
-    lines.push('  No usage data');
-    return lines;
-  }
-
   const calls = totalUsage.totalModelCallCount as number | undefined;
   const tokens = totalUsage.totalTokensUsage as number | undefined;
 
   if (tokens !== undefined) {
-    // Show 24h tokens and percentage relative to 5h limit
-    const pct24h = Math.round((tokens / tokenLimit) * 100);
-    lines.push(
-      `  Total Tokens (24h): ${formatNumber(tokens)} (${pct24h}% of 5h limit)`,
-      `  5h Window Usage: ${tokenPct}% of ${formatNumber(tokenLimit)}`
-    );
+    lines.push(...formatTokenUsageLines(tokens, tokenLimit, tokenPct));
   }
 
   if (calls !== undefined) {
@@ -303,42 +297,65 @@ function formatModelUsage(
 }
 
 /**
- * Format tool usage data as readable lines
+ * Format model usage data as readable lines
  */
-function formatToolUsage(
+function formatModelUsage(
   data: Record<string, unknown>,
   quotaData: ProcessedQuotaLimit | null
 ): string[] {
   const lines: string[] = [];
   const totalUsage = data.totalUsage as Record<string, unknown> | undefined;
-  
-  // Calculate total tool calls for percentage
-  if (totalUsage) {
-    const search = totalUsage.totalNetworkSearchCount as number | undefined;
-    const webRead = totalUsage.totalWebReadMcpCount as number | undefined;
-    const zread = totalUsage.totalZreadMcpCount as number | undefined;
-    
-    lines.push(
-      ...(search !== undefined ? [`  Network Searches: ${formatNumber(search)}`] : []),
-      ...(webRead !== undefined ? [`  Web Reads: ${formatNumber(webRead)}`] : []),
-      ...(zread !== undefined ? [`  ZRead Calls: ${formatNumber(zread)}`] : [])
-    );
+
+  if (!totalUsage) {
+    lines.push('  No usage data');
+    return lines;
   }
-  
-  // Show MCP usage details from quota if available
-  if (quotaData?.limits) {
-    for (const limit of quotaData.limits) {
-      if (limit.type === 'MCP usage(1 Month)' && limit.usageDetails) {
-        lines.push('  MCP Tool Details:');
-        const details = limit.usageDetails as unknown as Array<{modelCode: string; usage: number}>;
-        lines.push(...formatMcpToolLines(details));
-        break;
-      }
+
+  return formatModelUsageLines(totalUsage, quotaData);
+}
+
+/**
+ * Format tool usage data as readable lines
+ */
+function formatToolUsageSummaryLines(totalUsage: Record<string, unknown> | undefined): string[] {
+  if (!totalUsage) return [];
+
+  const search = totalUsage.totalNetworkSearchCount as number | undefined;
+  const webRead = totalUsage.totalWebReadMcpCount as number | undefined;
+  const zread = totalUsage.totalZreadMcpCount as number | undefined;
+
+  return [
+    ...(search !== undefined ? [`  Network Searches: ${formatNumber(search)}`] : []),
+    ...(webRead !== undefined ? [`  Web Reads: ${formatNumber(webRead)}`] : []),
+    ...(zread !== undefined ? [`  ZRead Calls: ${formatNumber(zread)}`] : [])
+  ];
+}
+
+function formatMcpUsageDetailLines(quotaData: ProcessedQuotaLimit | null): string[] {
+  if (!quotaData?.limits) return [];
+
+  for (const limit of quotaData.limits) {
+    if (limit.type === MCP_LIMIT_LABEL && limit.usageDetails) {
+      const details = limit.usageDetails as unknown as Array<{modelCode: string; usage: number}>;
+      return ['  MCP Tool Details:', ...formatMcpToolLines(details)];
     }
   }
-  
+
+  return [];
+}
+
+function formatToolUsage(
+  data: Record<string, unknown>,
+  quotaData: ProcessedQuotaLimit | null
+): string[] {
+  const totalUsage = data.totalUsage as Record<string, unknown> | undefined;
+  const lines = [
+    ...formatToolUsageSummaryLines(totalUsage),
+    ...formatMcpUsageDetailLines(quotaData)
+  ];
+
   if (lines.length === 0) {
-    lines.push('  No usage data');
+    return ['  No usage data'];
   }
 
   return lines;

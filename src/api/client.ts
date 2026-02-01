@@ -18,6 +18,16 @@ const REQUEST_TIMEOUT_MS = 10000;
  */
 const MAX_PARSE_ERROR_BODY_LENGTH = 200;
 
+const AUTH_401_DEFAULT_BODY = 'Unauthorized';
+const AUTH_403_DEFAULT_BODY = 'Forbidden';
+const API_429_DEFAULT_BODY = 'Too Many Requests';
+const API_5XX_DEFAULT_BODIES = [
+  'Internal Server Error',
+  'Bad Gateway',
+  'Service Unavailable',
+  'Gateway Timeout'
+] as const;
+
 /**
  * API response type
  */
@@ -66,6 +76,18 @@ function formatNetworkError(error: NetworkError, authToken: string): Error {
   return formattedError;
 }
 
+function formatErrorWithDetails(
+  baseMessage: string,
+  sanitizedBody: string,
+  ignoredBodies: readonly string[]
+): string {
+  if (sanitizedBody && !ignoredBodies.includes(sanitizedBody)) {
+    return createBoxedError(`${baseMessage} Details: ${sanitizedBody}`);
+  }
+
+  return createBoxedError(baseMessage);
+}
+
 /**
  * Format authentication error with boxed message
  * @param statusCode - HTTP status code (401, 403)
@@ -79,19 +101,17 @@ function formatAuthError(statusCode: number, responseBody: string, authToken: st
   let message = '';
 
   if (statusCode === 401) {
-    // Use friendly message for 401, but include sanitized details if available
-    if (sanitizedBody && sanitizedBody !== 'Unauthorized') {
-      message = createBoxedError(`Authentication failed. Please check your credentials. Details: ${sanitizedBody}`);
-    } else {
-      message = createBoxedError('Authentication failed. Please check your credentials.');
-    }
+    message = formatErrorWithDetails(
+      'Authentication failed. Please check your credentials.',
+      sanitizedBody,
+      [AUTH_401_DEFAULT_BODY]
+    );
   } else if (statusCode === 403) {
-    // Use friendly message for 403, but include sanitized details if available
-    if (sanitizedBody && sanitizedBody !== 'Forbidden') {
-      message = createBoxedError(`Access denied. You don't have permission. Details: ${sanitizedBody}`);
-    } else {
-      message = createBoxedError("Access denied. You don't have permission.");
-    }
+    message = formatErrorWithDetails(
+      "Access denied. You don't have permission.",
+      sanitizedBody,
+      [AUTH_403_DEFAULT_BODY]
+    );
   } else {
     // For other auth errors, use sanitized response body
     message = createBoxedError(sanitizedBody);
@@ -113,19 +133,17 @@ function formatApiError(statusCode: number, responseBody: string, authToken: str
   let message = '';
 
   if (statusCode === 429) {
-    // Use friendly message for 429, but include sanitized details if available
-    if (sanitizedBody && sanitizedBody !== 'Too Many Requests') {
-      message = createBoxedError(`Too many requests. Please try again later. Details: ${sanitizedBody}`);
-    } else {
-      message = createBoxedError('Too many requests. Please try again later.');
-    }
+    message = formatErrorWithDetails(
+      'Too many requests. Please try again later.',
+      sanitizedBody,
+      [API_429_DEFAULT_BODY]
+    );
   } else if (statusCode >= 500) {
-    // Use friendly message for 500+ server errors
-    if (sanitizedBody && !['Internal Server Error', 'Bad Gateway', 'Service Unavailable', 'Gateway Timeout'].includes(sanitizedBody)) {
-      message = createBoxedError(`Server error. Please try again later. Details: ${sanitizedBody}`);
-    } else {
-      message = createBoxedError('Server error. Please try again later.');
-    }
+    message = formatErrorWithDetails(
+      'Server error. Please try again later.',
+      sanitizedBody,
+      API_5XX_DEFAULT_BODIES
+    );
   } else {
     // For other API errors, use sanitized response body
     message = createBoxedError(sanitizedBody);

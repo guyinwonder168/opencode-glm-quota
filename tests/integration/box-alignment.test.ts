@@ -131,7 +131,11 @@ async function generateTestOutput(): Promise<string> {
   
   // The tool.execute function signature requires args and context
   // We pass empty objects since our tool doesn't use them
-  const result = await instance.tool.glm_quota.execute({}, {} as any);
+  const execute = instance.tool.glm_quota.execute as unknown as (
+    args: Record<string, unknown>,
+    context: Record<string, unknown>
+  ) => Promise<string>;
+  const result = await execute({}, {});
   return result;
 }
 

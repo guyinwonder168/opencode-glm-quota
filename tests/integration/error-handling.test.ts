@@ -3,6 +3,11 @@ import * as assert from 'node:assert';
 import { GlmQuotaPlugin } from '../../src/index.js';
 import { BOX_WIDTH } from '../../src/utils/box-constants.js';
 
+type PluginContext = Parameters<typeof GlmQuotaPlugin>[0];
+type ToolExecutor = {
+  execute: (args?: Record<string, unknown>, context?: Record<string, unknown>) => Promise<string> | string;
+};
+
 describe('Integration: Error Handling in src/index.ts', () => {
   test('should return boxed error message when Date constructor throws', async () => {
     // Setup credentials to reach queryAllUsage
@@ -22,10 +27,10 @@ describe('Integration: Error Handling in src/index.ts', () => {
       global.Date = ThrowingDate as DateConstructor;
 
       // Create plugin instance
-      const plugin = await GlmQuotaPlugin({} as any);
+      const plugin = await GlmQuotaPlugin({} as unknown as PluginContext);
       const tool = plugin.tool!.glm_quota;
 
-      const result = await (tool as any).execute();
+      const result = await (tool as unknown as ToolExecutor).execute();
 
       const lines = result.split('\n');
       assert.ok(result.includes('╔'), 'Output should contain top border');

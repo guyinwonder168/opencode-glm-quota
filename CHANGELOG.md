@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+- Refactored output formatting helpers in `src/index.ts` for clearer model/tool usage rendering.
+- Consolidated repeated error-detail formatting logic in `src/api/client.ts`.
+
+### Technical
+- Centralized quota limit constants to UPPER_SNAKE_CASE defaults.
+- Tightened integration test typing by removing `any` usage.
+
 ### Added
 - **Integration error coverage (catch block)**
   - New integration tests in `tests/integration/plugin-catch-block.test.ts`
