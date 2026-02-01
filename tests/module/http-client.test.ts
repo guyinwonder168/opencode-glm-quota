@@ -1,7 +1,6 @@
 import { describe, test, mock } from 'node:test';
 import * as assert from 'node:assert';
 import * as https from 'node:https';
-import * as path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { makeRequest } from '../../src/api/client.js';
 
@@ -39,8 +38,8 @@ describe('makeRequest', () => {
     await new Promise(resolve => setTimeout(resolve, 200));
 
     // Temporarily trust the test certificate for this process
-    const originalExtraCa = process.env.NODE_EXTRA_CA_CERTS;
-    process.env.NODE_EXTRA_CA_CERTS = path.resolve('tests/fixtures/test-cert.pem');
+    const originalCa = https.globalAgent.options.ca;
+    https.globalAgent.options.ca = cert;
 
     try {
       const result = await makeRequest({
@@ -50,7 +49,7 @@ describe('makeRequest', () => {
 
       assert.deepStrictEqual(result, responseBody);
     } finally {
-      process.env.NODE_EXTRA_CA_CERTS = originalExtraCa;
+      https.globalAgent.options.ca = originalCa;
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });
