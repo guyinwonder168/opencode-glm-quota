@@ -18,7 +18,7 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 - 🤖 View model usage statistics (24-hour rolling window)
 - 🔧 View MCP tool usage (web_search, web_reader, etc.)
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
-- 🔐 Automatic credential discovery from OpenCode auth.json
+- 🔐 Automatic credential discovery via OpenCode authentication context
 - 📈 Visual progress bars for quota percentages (ASCII for terminal alignment)
 - ⚡ Fail-fast error handling (no retry logic - user controls when to retry)
 
@@ -202,7 +202,7 @@ The plugin automatically detects the platform based on the provider ID used duri
 
 The plugin discovers credentials in this order:
 
-1. **OpenCode auth.json** (`~/.local/share/opencode/auth.json`) - PRIMARY
+1. **OpenCode authentication context** (managed by OpenCode) - PRIMARY
 2. **Environment variable** `ZAI_API_KEY` (Global) or `ZHIPU_API_KEY` (CN) - FALLBACK (dev/testing only)
 
 ### Time Window
@@ -261,16 +261,16 @@ src/
     date-formatter.ts   # Date/time formatting utilities
     progress-bar.ts     # ASCII progress bar rendering
     time-window.ts      # Rolling window calculation
-  integration/
-    agents/glm-quota-exec.md      # Minimal executor agent (Markdown)
-    command/glm_quota.md          # /glm_quota slash command
-    skills/glm-quota/SKILL.md      # Skill documentation
-  bin/
-    install.js                     # Installation script
-  dist/                   # Compiled JavaScript (generated)
-  tests/                  # Test suite
-  package.json            # Dependencies and scripts
-  tsconfig.json           # TypeScript configuration
+integration/
+  agents/glm-quota-exec.md      # Minimal executor agent (Markdown)
+  command/glm_quota.md          # /glm_quota slash command
+  skills/glm-quota/SKILL.md      # Skill documentation
+bin/
+  install.js                     # Installation script
+dist/                   # Compiled JavaScript (generated)
+tests/                  # Test suite
+package.json            # Dependencies and scripts
+tsconfig.json           # TypeScript configuration
 ```
 
 ### Code Style Guidelines
