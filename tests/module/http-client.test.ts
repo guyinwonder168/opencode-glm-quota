@@ -1,6 +1,7 @@
 import { describe, test, mock } from 'node:test';
 import * as assert from 'node:assert';
 import * as https from 'node:https';
+import * as path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { makeRequest } from '../../src/api/client.js';
 
@@ -37,9 +38,9 @@ describe('makeRequest', () => {
     // Wait for server to be fully ready (increased from 50ms to avoid ECONNREFUSED)
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Temporarily allow self-signed certs
-    const originalReject = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    // Temporarily trust the test certificate for this process
+    const originalExtraCa = process.env.NODE_EXTRA_CA_CERTS;
+    process.env.NODE_EXTRA_CA_CERTS = path.resolve('tests/fixtures/test-cert.pem');
 
     try {
       const result = await makeRequest({
@@ -49,7 +50,7 @@ describe('makeRequest', () => {
 
       assert.deepStrictEqual(result, responseBody);
     } finally {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = originalReject;
+      process.env.NODE_EXTRA_CA_CERTS = originalExtraCa;
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });
