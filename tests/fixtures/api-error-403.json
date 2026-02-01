@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "forbidden",
+    "message": "Access forbidden. You do not have permission to access this resource."
+  }
+}

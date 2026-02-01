@@ -209,6 +209,23 @@ function formatDateTime(date: Date): string {
 - Pad strings to fixed width: `text.padEnd(width)`
 - Progress bars: `#` for filled, `-` for empty (ASCII to avoid terminal double-width issues)
 - Truncate long output with ellipsis `...`
+- **CRITICAL**: Always use `BOX_WIDTH` constants from `src/utils/box-constants.ts` instead of hardcoding dimensions:
+  - `BOX_WIDTH.TOTAL` (60) - Total line width
+  - `BOX_WIDTH.CONTENT` (56) - Available content width
+  - `BOX_WIDTH.BORDER_CHARS` (58) - Border character count
+  - `BOX_WIDTH.PADDING` (2) - Left/right padding
+- Import in tests: `import { BOX_WIDTH } from '../../src/utils/box-constants.js'`
+
+```typescript
+// ❌ WRONG - Hardcoded dimensions
+assert.strictEqual(lines[0].length, 60);
+const contentWidth = 56;
+
+// ✅ CORRECT - Use constants
+import { BOX_WIDTH } from '../../src/utils/box-constants.js';
+assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL);
+const contentWidth = BOX_WIDTH.CONTENT;
+```
 
 ### Comments & Documentation
 - Use JSDoc-style comments for exported functions
@@ -322,7 +339,8 @@ function isApiResponse(data: unknown): data is ApiResponse {
 
 **Reference:**
 - Implementation plan: `docs/implementation-plan.md` - Follows TDD with vertical slicing
-- Code standards: `.opencode/context/core/standards/code.md` - Detailed principles above
+- ALL context needed for OpenAgents: `/home/eddy/distrobox/box-go-debian-home/.config/opencode/context/` - find the needed context here if you didnt found it in the project folder
+- Code standards: `/home/eddy/distrobox/box-go-debian-home/.config/opencode/context/core/standards/code.md` - Detailed principles above
 
 ### Plugin Architecture (OpenCode Plugin)
 
@@ -621,6 +639,9 @@ Before creating a GitHub release:
 - ❌ Adding "Bearer " prefix to Authorization header
 - ❌ Using single fabricated endpoint instead of three actual endpoints
 - ❌ Missing URL encoding for query parameters
+- ❌ Hardcoding HTTPS port to 443 in tests (use URL port for local test servers)
 - ❌ Not handling missing credentials gracefully
 - ❌ Forgetting to pad strings in ASCII output
 - ❌ Assuming specific auth.json structure (use flexible discovery)
+
+- **Known Issue: HTTPS server binding** - When using `https.createServer()` in tests, binding to `0.0.0.0` causes ECONNREFUSED errors on some systems. **Solution:** Bind to `127.0.0.1` instead of `0.0.0.0`. Also add a short delay (50ms) after `server.listen()` to ensure server is fully initialized before making requests.

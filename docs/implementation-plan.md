@@ -18,11 +18,11 @@
 | Slice 3: Single Endpoint Query | ✅ **COMPLETE** | 2026-01-18 | - | - |
 | Slice 4: Multiple Endpoints & Display | ✅ **COMPLETE** | 2026-01-18 | - | - |
 | Slice 4.5: Add Next Reset Time | ✅ **COMPLETE** | 2026-01-21 | 13 | N/A |
-| Slice 4.6: Global Installation & Setup Command | ⏳ **TODO** | - | - | - |
-| Slice 5: Error Handling & Edge Cases | ⏳ **TODO** | - | - | - |
+| Slice 4.6: Global Installation & Setup Command | ✅ **COMPLETE** | 2026-01-31 | - | - |
+| Slice 5: Error Handling & Edge Cases | ✅ **COMPLETE** | 2026-02-01 | 101 | N/A |
 | Slice 6: Refactoring & Optimization | ⏳ **TODO** | - | - | - |
 
-**Overall Progress:** 7/8 slices complete (87.5%)
+**Overall Progress:** 8/9 slices complete (88.9%), Slice 6 pending
 
 ---
 
@@ -355,11 +355,11 @@ Each slice MUST:
 
 ---
 
-### SLICE 4.6: Global Installation & Setup Command
+### SLICE 4.6: Global Installation & Setup Command ✅ **COMPLETE**
 
 **User Value:** Users can install plugin via npm with automatic OpenCode configuration, enabling `/glm_quota` command to work after installation.
 
-**Status:** ⏳ **TODO**
+**Status:** ✅ **COMPLETE** (2026-01-31)
 **Priority:** Medium (usability enhancement)
 **Estimated Time:** 1-2 days
 
@@ -395,13 +395,13 @@ Package includes an installer command that copies `/integration/` files from npm
 ```
 
 **Acceptance Criteria:**
-- [ ] `package.json` includes `integration/` in `files` field
-- [ ] `package.json` includes bin entry for install command
-- [ ] `bin/install.js` copies files from npm package to OpenCode config
-- [ ] Installer merges `opencode.jsonc` into existing config using JSONC parser
-- [ ] Manual `npx @opencode-glm-quota/plugin install` works for user control
-- [ ] `npx @opencode-glm-quota/plugin install --force` overwrites existing
-- [ ] Documentation updated with installation instructions
+- [x] `package.json` includes `integration/` in `files` field
+- [x] `package.json` includes bin entry for install command
+- [x] `bin/install.js` copies files from npm package to OpenCode config
+- [x] Installer merges `opencode.jsonc` into existing config using JSONC parser
+- [x] Manual `npx @opencode-glm-quota/plugin install` works for user control
+- [x] `npx @opencode-glm-quota/plugin install --force` overwrites existing
+- [x] Documentation updated with installation instructions
 
 **Files to Create:**
 - `integration/opencode.jsonc` - Agent configuration (JSONC)
@@ -433,22 +433,87 @@ Package includes an installer command that copies `/integration/` files from npm
 
 **User Value:** Users see helpful error messages when things go wrong, no crashes or confusing behavior.
 
+**Status:** ✅ **COMPLETED** (2026-02-01)  
+**Priority:** High (production-ready requirement)
+**Estimated Time:** ~7 hours (16 tasks across 6 phases)
+
 **Acceptance Criteria:**
-- [ ] Network errors (timeout, connection refused) caught and handled
-- [ ] Authentication errors (401, 403) display user-friendly message
-- [ ] API errors (429, 500) propagate with clear context
-- [ ] Parse errors (invalid JSON, missing fields) caught and reported
-- [ ] Tokens never appear in error messages (sanitized)
-- [ ] Each error type has dedicated test suite
-- [ ] Integration tests cover error paths
+- [x] Network errors (timeout, connection refused) caught and handled
+- [x] Authentication errors (401, 403) display user-friendly message
+- [x] API errors (429, 500) propagate with clear context
+- [x] Parse errors (invalid JSON, missing fields) caught and reported
+- [x] Tokens never appear in error messages (sanitized)
+- [x] Each error type has dedicated test suite
+- [x] Integration tests cover error paths
+- [x] All errors use 60-char boxed format for consistency
+
+**Task Breakdown (16 Tasks, 6 Phases):**
+
+**Phase 1: Setup & Infrastructure (Tasks 1-3)**
+- Task 1: Create `tests/error-handling/` directory structure
+- Task 2: Create error fixtures (`401.json`, `403.json`, `429.json`, `500.json`)
+- Task 3: TDD: Token sanitization utility (test → implement → refactor)
+
+**Phase 2: Network Error Handling (Tasks 4-5)**
+- Task 4: TDD: Network timeout error handling (boxed output, 10s timeout)
+- Task 5: TDD: Network connection errors (ECONNREFUSED, ENOTFOUND)
+
+**Phase 3: Authentication Error Handling (Tasks 6-7)**
+- Task 6: TDD: 401 Unauthorized error (boxed with `/connect` instructions)
+- Task 7: TDD: 403 Forbidden error (boxed with permission message)
+
+**Phase 4: API & Parse Error Handling (Tasks 8-10)**
+- Task 8: TDD: 429 Rate limiting error (boxed with retry guidance)
+- Task 9: TDD: 500+ Server errors (boxed with "try later" message)
+- Task 10: TDD: Invalid JSON parse errors (boxed, sanitized)
+
+**Phase 5: Integration & Consistency (Tasks 11-14)**
+- Task 11: Box all error outputs in `src/index.ts` catch block ✅
+- Task 12: Create `src/utils/error-formatter.ts` (consolidate boxed errors) ✅
+- Task 13: Integration tests: End-to-end error paths (network, auth, API, parse) ✅
+- Task 14: Run full test suite - verify all 50+ existing tests still pass ✅
+
+**Phase 6: Finalization (Tasks 15-16)**
+- Task 15: Update `docs/implementation-plan.md` (mark Slice 5 complete) ✅
+- Task 16: Git commit & push: `feat: comprehensive error handling with token sanitization`
 
 **Files to Create:**
 - `tests/error-handling/network-errors.test.ts`
 - `tests/error-handling/auth-errors.test.ts`
 - `tests/error-handling/api-errors.test.ts`
 - `tests/error-handling/parse-errors.test.ts`
+- `tests/error-handling/token-sanitization.test.ts`
+- `tests/integration/error-handling.test.ts`
+- `tests/integration/plugin-catch-block.test.ts`
 - `tests/fixtures/api-error-401.json`
+- `tests/fixtures/api-error-403.json`
+- `tests/fixtures/api-error-429.json`
 - `tests/fixtures/api-error-500.json`
+- `tests/fixtures/test-key.pem`
+- `tests/fixtures/test-cert.pem`
+
+**Files to Modify:**
+- `src/api/client.ts` - Add timeout, categorize errors, sanitize tokens
+- `src/index.ts` - Box all error outputs (line 693 catch block)
+- `src/utils/error-formatter.ts` - Create error formatting utility (NEW)
+- `docs/implementation-plan.md` - Mark Slice 5 complete (this task)
+
+**Implementation Approach:**
+1. **TDD for each error type:** Write failing test → implement minimal code → verify passes → refactor
+2. **Token sanitization:** All error messages pass through `sanitizeToken()` before display
+3. **Boxed error format:** Use `formatErrorBox(title: string, message: string): string` for consistency
+4. **Fail-fast philosophy:** No retry logic - user-requested action, clear error, let user retry
+5. **Parallel requests:** Keep `Promise.all()` in `queryAllUsage()` (not sequential as plan suggests)
+
+**Test Coverage Goals:**
+- Network error handling: 8 tests
+- Auth error handling: 8 tests
+- API error handling: 6 tests
+- Parse error handling: 4 tests
+- Token sanitization: 6 tests
+- Integration error paths: 8 tests
+- **Total:** 40+ new tests
+- **Expected final count:** 90+ tests (50 existing + 40 new)
 
 **Dependencies:** Slice 4 (all endpoints working)
 
@@ -549,10 +614,10 @@ Package includes an installer command that copies `/integration/` files from npm
 - Deliverable: All error paths tested, graceful failures
 
 **Phase 4 Exit Criteria:**
-- [ ] All error types tested
-- [ ] Token sanitization verified
-- [ ] Integration error tests pass
-- [ ] No crashes on invalid input
+- [x] All error types tested
+- [x] Token sanitization verified
+- [x] Integration error tests pass
+- [x] No crashes on invalid input
 
 ---
 
@@ -698,7 +763,7 @@ npm run test -- --watch
 
 ```
 Slice 1 (Auth) ───┐
-                  ├───> Slice 1.5 (Command/Skill) ───┐
+                  ├───> Slice 1.5 (Command/Skill) ────┐
 Slice 2 (Utils) ───┘                                  │
                                                       ├───> Slice 3 (Single Endpoint)
                                                               │
@@ -745,8 +810,8 @@ Slice 2 (Utils) ───┘                                  │
 - [x] Plugin queries all three endpoints (quota, model, tool)
 - [x] Plugin displays usage statistics in ASCII table format
 - [x] Plugin shows progress bars for quota percentages
-- [ ] Plugin handles network errors gracefully
-- [ ] Plugin handles authentication errors with user-friendly messages
+- [x] Plugin handles network errors gracefully
+- [x] Plugin handles authentication errors with user-friendly messages
 - [ ] Plugin works on both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
 
 ### 7.2 Technical Requirements
@@ -917,7 +982,7 @@ Slice 2 (Utils) ───┘                                  │
 - [x] Authentication working (OpenCode + env vars)
 - [x] Time window calculation accurate
 - [x] Output displays correctly
-- [ ] Error handling robust
+- [x] Error handling robust
 
 ### 9.3 Process Metrics
 
@@ -957,6 +1022,213 @@ Slice 2 (Utils) ───┘                                  │
 ---
 
 ## 11. Recent Updates
+
+### 2026-02-01: Slice 5 Task 8 - 429 Rate Limit Error Handling ✅ **COMPLETE**
+
+**Status:** ✅ COMPLETED (2026-02-01)
+**Branch:** `feature/slice-5-error-handling`
+**Commit:** `49b7520` - "feat: add 429 rate limit error handling (slice5-08)"
+
+**Implemented:**
+- ✅ `formatApiError()` function for HTTP 429 responses
+- ✅ User-friendly boxed message: "Too many requests. Please try again later."
+- ✅ Token sanitization applied to prevent credential exposure
+- ✅ 60-character boxed error format for consistency
+- ✅ 4 new tests for 429 error handling (all passing)
+
+**Test Results:**
+- ✅ 4 new tests for 429 error handling
+- ✅ Total: 85 tests passing (81 existing + 4 new)
+- ✅ TypeScript compiles without errors
+- ✅ Linting passes (0 errors, 0 warnings)
+
+**Files Modified:**
+- `tests/error-handling/api-errors.test.ts` (NEW)
+- `src/api/client.ts` (added formatApiError function)
+
+**TDD Methodology:**
+- ✅ RED: Wrote failing tests first (watched them fail)
+- ✅ GREEN: Implemented minimal code to pass tests
+- ✅ REFACTOR: Verified code quality (lint, TypeScript compile)
+
+**Quality Checks:**
+- ✅ All 85 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Token sanitization verified
+- ✅ Consistent with auth error handling pattern
+
+**Next Steps:**
+1. Proceed to Task 9: 500+ Server error handling
+2. Expected: +4 tests, total ~89 tests passing
+
+---
+
+### 2026-02-01: Slice 5 Task 7 - 403 Forbidden Error Handling ✅ **COMPLETE**
+
+**Status:** ✅ COMPLETED (2026-02-01)
+**Branch:** `feature/slice-5-error-handling`
+**Commit:** `b726f94` - "feat: add 403 forbidden error handling (slice5-07)"
+
+**Implemented:**
+- ✅ Extended `formatAuthError()` function to handle HTTP 403 responses
+- ✅ User-friendly boxed message: "Access denied. You don't have permission."
+- ✅ Token sanitization applied to prevent credential exposure
+- ✅ 60-character boxed error format for consistency
+- ✅ 4 new tests for 403 error handling (all passing)
+
+**Test Results:**
+- ✅ 4 new tests for 403 error handling
+- ✅ Total: 81 tests passing (77 existing + 4 new)
+- ✅ TypeScript compiles without errors
+- ✅ Linting passes (0 errors, 0 warnings)
+
+**Files Modified:**
+- `tests/error-handling/auth-errors.test.ts` (extended with 403 tests)
+- `src/api/client.ts` (updated formatAuthError with 403 handling)
+
+**TDD Methodology:**
+- ✅ RED: Wrote failing tests first (watched them fail)
+- ✅ GREEN: Implemented minimal code to pass tests
+- ✅ REFACTOR: Verified code quality (lint, TypeScript compile)
+
+**Quality Checks:**
+- ✅ All 81 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Token sanitization verified
+- ✅ Consistent with 401 error handling pattern
+
+**Next Steps:**
+1. Proceed to Phase 4: API & Parse Error Handling (Tasks 8-10)
+2. Task 8: 429 Rate limiting error
+3. Expected: +4 tests, total ~85 tests passing
+
+---
+
+### 2026-02-01: Slice 5 Task 6 - 401 Unauthorized Error Handling ✅ **COMPLETE**
+
+**Status:** ✅ COMPLETED (2026-02-01)
+**Branch:** `feature/slice-5-error-handling`
+**Commit:** `9cc2186` - "feat: add 401 unauthorized error handling (slice5-06)"
+
+**Implemented:**
+- ✅ `formatAuthError()` function for HTTP 401 responses
+- ✅ User-friendly boxed message: "Authentication failed. Please check your credentials."
+- ✅ Token sanitization applied to prevent credential exposure
+- ✅ 60-character boxed error format for consistency
+- ✅ 4 new tests for auth error handling (all passing)
+
+**Test Results:**
+- ✅ 4 new tests for 401 error handling
+- ✅ Total: 77 tests passing (73 existing + 4 new)
+- ✅ TypeScript compiles without errors
+- ✅ Linting passes (0 errors, 0 warnings)
+
+**Files Modified:**
+- `tests/error-handling/auth-errors.test.ts` (NEW)
+- `src/api/client.ts` (updated with formatAuthError function)
+
+**TDD Methodology:**
+- ✅ RED: Wrote failing tests first (watched them fail)
+- ✅ GREEN: Implemented minimal code to pass tests
+- ✅ REFACTOR: Verified no refactoring needed
+
+**Quality Checks:**
+- ✅ All 77 tests passing (100%)
+- ✅ Code follows AGENTS.md guidelines
+- ✅ Type-safe (strict mode, no `any` types)
+- ✅ Token sanitization verified
+
+**Next Steps:**
+1. Proceed to Task 7: 403 Forbidden error handling
+2. Expected: +4 tests, total ~81 tests passing
+
+---
+
+### 2026-01-31: Slice 5 Planning - Error Handling & Edge Cases ⏳ **PLANNED**
+
+**Status:** Ready to start - 16 tasks organized into 6 phases
+**Estimated Time:** ~7 hours total
+**Branch:** `feature/slice-5-error-handling`
+
+**Task Breakdown:**
+
+**Phase 1: Setup & Infrastructure (45 min)**
+- Task 1: Create `tests/error-handling/` directory structure
+- Task 2: Create error fixtures (401.json, 403.json, 429.json, 500.json)
+- Task 3: TDD: Token sanitization utility (test → implement → refactor)
+
+**Phase 2: Network Error Handling (75 min)**
+- Task 4: TDD: Network timeout error handling (boxed output, 10s timeout)
+- Task 5: TDD: Network connection errors (ECONNREFUSED, ENOTFOUND)
+
+**Phase 3: Authentication Error Handling (75 min)**
+- Task 6: TDD: 401 Unauthorized error (boxed with `/connect` instructions)
+- Task 7: TDD: 403 Forbidden error (boxed with permission message)
+
+**Phase 4: API & Parse Error Handling (90 min)**
+- Task 8: TDD: 429 Rate limiting error (boxed with retry guidance)
+- Task 9: TDD: 500+ Server errors (boxed with "try later" message)
+- Task 10: TDD: Invalid JSON parse errors (boxed, sanitized)
+
+**Phase 5: Integration & Consistency (125 min)**
+- Task 11: Box all error outputs in `src/index.ts` catch block
+- Task 12: Create `src/utils/error-formatter.ts` (consolidate boxed errors)
+- Task 13: Integration tests: End-to-end error paths (network, auth, API, parse)
+- Task 14: Run full test suite - verify all 50+ existing tests still pass
+
+**Phase 6: Finalization (15 min)**
+- Task 15: Update `docs/implementation-plan.md` (mark Slice 5 complete)
+- Task 16: Git commit & push: `feat: comprehensive error handling with token sanitization`
+
+**Files to Create:**
+- `tests/error-handling/network-errors.test.ts`
+- `tests/error-handling/auth-errors.test.ts`
+- `tests/error-handling/api-errors.test.ts`
+- `tests/error-handling/parse-errors.test.ts`
+- `tests/error-handling/token-sanitization.test.ts`
+- `tests/integration/error-handling.test.ts`
+- `tests/fixtures/api-error-401.json`
+- `tests/fixtures/api-error-403.json`
+- `tests/fixtures/api-error-429.json`
+- `tests/fixtures/api-error-500.json`
+
+**Files to Modify:**
+- `src/api/client.ts` - Add timeout, categorize errors, sanitize tokens
+- `src/index.ts` - Box all error outputs (line 693 catch block)
+- `src/utils/error-formatter.ts` - Create error formatting utility (NEW)
+
+**Implementation Approach:**
+- **TDD for each error type:** Write failing test → implement minimal code → verify passes → refactor
+- **Token sanitization:** All error messages pass through `sanitizeToken()` before display
+- **Boxed error format:** Use `formatErrorBox(title: string, message: string): string` for consistency
+- **Fail-fast philosophy:** No retry logic - user-requested action, clear error, let user retry
+
+**Test Coverage Goals:**
+- Network error handling: 8 tests
+- Auth error handling: 8 tests
+- API error handling: 6 tests
+- Parse error handling: 4 tests
+- Token sanitization: 6 tests
+- Integration error paths: 8 tests
+- **Total:** 40+ new tests
+- **Expected final count:** 90+ tests (50 existing + 40 new)
+
+**Quality Goals:**
+- All errors use 60-char boxed format
+- Tokens never appear in error messages
+- Clear, user-friendly error messages
+- No raw stack traces in output
+- No crashes on invalid input
+
+**Next Steps:**
+1. Start Task 1: Create directory structure
+2. Follow TDD Red-Green-Refactor cycle for each task
+3. Update todo list after each completed task
+4. Run full test suite after Task 14
+
+---
 
 ### 2026-01-21: Slice 4.5 - Next Reset Time ✅ **COMPLETE**
 
@@ -1233,21 +1505,34 @@ This plan provides:
 
 ✅ **Risk Mitigation** - Technical and schedule risks with mitigation strategies
 
-✅ **Execution Guide** - How to use the plan, TDD workflow, debugging approach
+✅ **Execution Guide** - How to use plan, TDD workflow, debugging approach
+
+**Current Status:**
+
+✅ **Slice 1-4.6 Complete** (8/9 slices, 88.9%)
+⏳ **Slice 5 In Progress** - Error Handling & Edge Cases (16 tasks, 6 phases)
+⏳ **Slice 6 Pending** - Refactoring & Optimization
 
 **Next Steps:**
 
-1. Start Slice 5: Error Handling & Edge Cases
+1. Continue Slice 5: Error Handling & Edge Cases (16 tasks)
+   - Phase 1: Setup & Infrastructure (Tasks 1-3)
+   - Phase 2: Network Error Handling (Tasks 4-5)
+   - Phase 3: Authentication Error Handling (Tasks 6-7)
+   - Phase 4: API & Parse Error Handling (Tasks 8-10)
+   - Phase 5: Integration & Consistency (Tasks 11-14)
+   - Phase 6: Finalization (Tasks 15-16)
 2. Implement network error handling (timeout, connection refused)
 3. Implement auth error messages (401, 403)
 4. Add parse error recovery (invalid JSON, missing fields)
 5. Test error paths with mock responses
 6. Verify token sanitization in error messages
-7. Then proceed to Slice 6: Refactoring & Optimization
+7. Run full test suite (90+ tests expected)
+8. Then proceed to Slice 6: Refactoring & Optimization
 
 ---
 
-*Document Version: 1.4*
+*Document Version: 1.5*
 *Created: 2026-01-17*
-*Last Updated: 2026-01-18*
-*Status: Slice 4 Complete, Proceeding to Slice 5*
+*Last Updated: 2026-01-31*
+*Status: Slice 5 In Progress (16 tasks planned)*
