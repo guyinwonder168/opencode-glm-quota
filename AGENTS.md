@@ -63,6 +63,7 @@ This project uses GitHub Actions for automated CI/CD.
 **What It Does:**
 - Builds, tests, and lints code
 - Publishes package to npm with provenance
+- Publishes package to GitHub Packages as scoped package (`@<repo-owner>/opencode-glm-quota`)
 - Creates release artifacts
 
 **Setup Required:**
@@ -84,7 +85,7 @@ gh release create v1.0.0 --generate-notes
 # 4. Click "Publish release"
 ```
 
-The workflow automatically publishes to npm when a release is created.
+The workflow automatically publishes to npm and GitHub Packages when a release is created.
 
 ### CI Status Badge
 
@@ -633,7 +634,7 @@ Before creating a GitHub release:
 8. All CI checks must pass
 9. Update version in package.json (if exists)
 10. Update CHANGELOG.md with changes
-11. Create GitHub release (workflow publishes to npm automatically)
+11. Create GitHub release (workflow publishes to npm and GitHub Packages automatically)
 
 ## Common Pitfalls
 - ❌ Adding "Bearer " prefix to Authorization header
