@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-02-07
+
+### Added
+- Release workflow now publishes to GitHub Packages in addition to npmjs.
+
+### Technical
+- Added a GitHub Packages publish job that scopes the package name at publish time (`@<owner>/opencode-glm-quota`) and publishes to `https://npm.pkg.github.com`.
+
 ## [1.5.1] - 2026-02-07
 
 ### Fixed

@@ -1,6 +1,6 @@
 {
   "name": "opencode-glm-quota",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "type": "module",
   "description": "OpenCode plugin to query Z.ai GLM Coding Plan usage statistics including quota limits, model usage, and MCP tool usage",
   "main": "dist/index.js",
