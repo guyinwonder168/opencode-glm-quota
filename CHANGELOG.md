@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-02-07
+
+### Fixed
+- Installer now always writes OpenCode's valid `plugin` config key (singular) instead of `plugins`.
+- Installer migrates legacy `plugins` arrays into `plugin` and removes the invalid key.
+- Added regression integration tests for fresh install config generation and legacy key migration.
+
 ## [1.5.0] - 2026-02-02
 
 ### Changed
