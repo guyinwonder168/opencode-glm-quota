@@ -19,6 +19,11 @@ import { formatProgressLine } from "./utils/progress-bar.js";
 import { formatTimeUntilReset } from "./utils/reset-timer.js";
 import { BOX_WIDTH, HEADER } from "./utils/box-constants.js";
 import { createBoxedError } from "./utils/error-formatter.js";
+import {
+  FIVE_HOUR_TOKEN_LIMIT_LABEL,
+  getTokenLimitLabel,
+  isFiveHourTokenLimit
+} from "./utils/token-limits.js";
 
 // ============================================================================
 // CONSTANTS
@@ -34,7 +39,6 @@ const CANDIDATE_PROVIDER_IDS = [
 ] as const;
 
 const DEFAULT_TOKEN_LIMIT = 40000000;
-const TOKEN_LIMIT_LABEL = 'Token usage(5 Hour)';
 const MCP_LIMIT_LABEL = 'MCP usage(1 Month)';
 const TOKEN_LIMIT_TYPE = 'TOKENS_LIMIT';
 const TIME_LIMIT_TYPE = 'TIME_LIMIT';
@@ -56,6 +60,9 @@ interface Credentials {
  */
 interface QuotaLimitItem {
   type: string;
+  rawType?: string;
+  unit?: number;
+  number?: number;
   percentage: number;
   currentValue?: number;
   total?: number;
@@ -204,7 +211,10 @@ function processQuotaLimit(data: Record<string, unknown>): ProcessedQuotaLimit {
 
         if (limit.type === TOKEN_LIMIT_TYPE) {
           return {
-            type: TOKEN_LIMIT_LABEL,
+            type: getTokenLimitLabel(limit),
+            rawType: TOKEN_LIMIT_TYPE,
+            unit: typeof limit.unit === 'number' ? limit.unit : undefined,
+            number: typeof limit.number === 'number' ? limit.number : undefined,
             percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
             nextResetTime: limit.nextResetTime as number | undefined
           };
@@ -244,14 +254,26 @@ function formatNumber(num: number): string {
 function getTokenLimitInfo(quotaData: ProcessedQuotaLimit | null): { tokenLimit: number; tokenPct: number } {
   let tokenLimit = DEFAULT_TOKEN_LIMIT;
   let tokenPct = 0;
+  let hasFiveHourMatch = false;
 
   if (!quotaData?.limits) return { tokenLimit, tokenPct };
 
   for (const limit of quotaData.limits) {
-    if (limit.type === TOKEN_LIMIT_LABEL) {
+    if (isFiveHourTokenLimit(limit)) {
       tokenPct = typeof limit.percentage === 'number' ? limit.percentage : 0;
       tokenLimit = (limit.total as number) || DEFAULT_TOKEN_LIMIT;
+      hasFiveHourMatch = true;
       break;
+    }
+  }
+
+  if (!hasFiveHourMatch) {
+    for (const limit of quotaData.limits) {
+      if (limit.rawType === TOKEN_LIMIT_TYPE || limit.type === FIVE_HOUR_TOKEN_LIMIT_LABEL) {
+        tokenPct = typeof limit.percentage === 'number' ? limit.percentage : 0;
+        tokenLimit = (limit.total as number) || DEFAULT_TOKEN_LIMIT;
+        break;
+      }
     }
   }
 
