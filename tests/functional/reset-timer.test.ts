@@ -61,6 +61,13 @@ describe('formatTimeUntilReset', () => {
     assert.strictEqual(result, 'Resets in 0 hours 45 minutes');
   });
 
+  test('should format long durations as days and hours', () => {
+    // Current time + 163h 18m -> 6 days and 19 hours (minutes hidden)
+    const resetTime = fixedNow + (163 * 60 * 60 * 1000) + (18 * 60 * 1000);
+    const result = formatTimeUntilReset(resetTime);
+    assert.strictEqual(result, 'Resets in 6 days and 19 hours');
+  });
+
   test('should return empty string for past timestamp', () => {
     // Current time - 1 hour (already passed)
     const resetTime = fixedNow - (60 * 60 * 1000);
