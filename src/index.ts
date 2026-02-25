@@ -516,9 +516,10 @@ function isFullWidthCodePoint(codePoint: number): boolean {
  * @param platformName - Platform name
  * @param startTime - Start time string
  * @param endTime - End time string
+ * @param level - Account level/tier (optional)
  * @returns Array of header lines
  */
-function formatHeader(platformName: string, startTime: string, endTime: string): string[] {
+function formatHeader(platformName: string, startTime: string, endTime: string, level?: string): string[] {
   const lines: string[] = [];
 
   lines.push('╔' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╗');
@@ -527,6 +528,10 @@ function formatHeader(platformName: string, startTime: string, endTime: string):
   lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
   lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
   lines.push(formatBoxLine(`Platform: ${platformName}`, BOX_WIDTH.CONTENT));
+  if (level) {
+    const capitalizedLevel = level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
+    lines.push(formatBoxLine(`Plan:     ${capitalizedLevel}`, BOX_WIDTH.CONTENT));
+  }
   lines.push(formatBoxLine(`Period:   ${startTime} → ${endTime}`, BOX_WIDTH.CONTENT));
   lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
 
@@ -636,8 +641,9 @@ function formatOutput(
 ): string {
   const lines: string[] = [];
   const platformName = getPlatformName(platform);
+  const level = quotaData?.level as string | undefined;
 
-  lines.push(...formatHeader(platformName, startTime, endTime));
+  lines.push(...formatHeader(platformName, startTime, endTime, level));
   lines.push(...formatQuotaLimits(quotaData));
   lines.push(...formatDataSection(
     'MODEL USAGE (24h)',

@@ -14,12 +14,14 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 
 ## Features
 
-- 📊 Query current quota limits (5-hour token cycle, monthly MCP usage)
+- 📊 Query current quota limits (5-hour token cycle, weekly quota, monthly MCP usage)
 - 🤖 View model usage statistics (24-hour rolling window)
 - 🔧 View MCP tool usage (web_search, web_reader, etc.)
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
 - 🔐 Automatic credential discovery via OpenCode authentication context
 - 📈 Visual progress bars for quota percentages (ASCII for terminal alignment)
+- ⏰ Reset countdown display - Shows when quota resets (hours/days)
+- 🏷️ Account plan display - Shows your subscription tier (Lite, Pro, etc.)
 - ⚡ Fail-fast error handling (no retry logic - user controls when to retry)
 
 ## Installation
@@ -132,11 +134,15 @@ After authentication, simply run:
 ║                                                                  ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  Platform: Z.AI                                                  ║
+║  Plan:     Pro                                                   ║
 ║  Period:   2026-01-17 21:00:00 → 2026-01-18 20:59:59             ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  QUOTA LIMITS                                                    ║
 ╟──────────────────────────────────────────────────────────────────╢
 ║  Token usage(5 Hour)      [###################--------]  40.5%   ║
+║  Resets in 3 hours 42 minutes                                    ║
+║  Token usage(Weekly)      [########------------------]  52.0%    ║
+║  Resets in 4 days and 12 hours                                   ║
 ║  MCP usage(1 Month)       [####-----------------------]  12.3%   ║
 ║       Used: 123/1,000                                            ║
 ╠══════════════════════════════════════════════════════════════════╣

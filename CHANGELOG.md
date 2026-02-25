@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-26
+
+### Added
+- **Weekly token quota support** - API now returns multiple token limit windows
+  - Dynamic label mapping using `unit` and `number` fields from API
+  - `unit: 3, number: 5` → "Token usage(5 Hour)"
+  - `unit: 6, number: 1` → "Token usage(Weekly)"
+  - Fallback labels for unknown combinations: "Token usage(unit=X, number=Y)"
+- **Account level display** - Shows subscription tier (Lite, Pro, etc.) in header
+- **Long duration reset times** - Formats as "X days and Y hours" for durations ≥ 24 hours
+
+### Changed
+- Token limit labels now derived from API fields instead of hardcoded
+- `getTokenLimitInfo()` explicitly selects 5-hour window for calculations
+- `formatTimeUntilReset()` now shows days for long durations
+
+### Fixed
+- Mislabeling of weekly quota as "Token usage(5 Hour)" (#26)
+
+### Technical
+- New utility module: `src/utils/token-limits.ts`
+- New test file: `tests/functional/token-limits.test.ts`
+- Added `rawType`, `unit`, `number` fields to `QuotaLimitItem` interface
+
 ## [1.5.2] - 2026-02-07
 
 ### Added
