@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-02-26
+
+### Fixed
+- GitHub Packages publish workflow now completes successfully
+
 ## [1.6.0] - 2026-02-26
 
 ### Added
