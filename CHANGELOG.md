@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-03-22
+
+### Fixed
+- **Windows path bug in installer** - `bin/install.js` now uses `fileURLToPath()` instead of `decodeURIComponent(new URL(import.meta.url).pathname)` to fix doubled drive letter bug on Windows (#28)
+
+### Technical
+- Added `fileURLToPath` import from Node.js `url` module
+
 ## [1.6.1] - 2026-02-26
 
 ### Fixed

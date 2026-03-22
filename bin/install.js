@@ -15,6 +15,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { fileURLToPath } from 'url'
 import { spawnSync } from 'child_process'
 import { parse as parseJsonc } from 'jsonc-parser'
 
@@ -22,7 +23,7 @@ import { parse as parseJsonc } from 'jsonc-parser'
 // CONSTANTS
 // ==========================================
 
-const __filename = decodeURIComponent(new URL(import.meta.url).pathname)
+const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const SOURCE_DIR = path.join(__dirname, '..', 'integration')
 const COMMAND_FILE = path.join(SOURCE_DIR, 'command', 'glm_quota.md')
