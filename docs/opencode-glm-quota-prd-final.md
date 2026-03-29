@@ -1,8 +1,8 @@
 # OpenCode GLM Quota Plugin - Product Requirements Document
 
-**Version:** 8.3 (with Slice 4.5 - Next Reset Time ✅)
-**Date:** January 21, 2026
-**Status:** Slice 4.5 Complete, Slice 4.6 Planned
+**Version:** 9.0 (Markdown Output Migration - v1.7.0)
+**Date:** March 30, 2026
+**Status:** Markdown output design complete, implementation planned
 **Classification:** Technical Specification - Verified from Official Source
 
 **Package Name:** `opencode-glm-quota`  
@@ -20,6 +20,7 @@ This PRD specifies an OpenCode plugin that queries Z.ai GLM Coding Plan usage st
 - 🔧 View MCP tool usage (web_search, web_reader, etc.)
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
 - 📦 Distributed via npm for easy installation
+- 📝 **Rich Markdown output** - Rendered by OpenCode's Glamour TUI (NEW in v1.7.0 ⏳)
 
 ### Critical Corrections from Previous Versions
 
@@ -277,6 +278,153 @@ opencode-glm-quota/
 ```
 
 **Status:** ⏳ PLANNED - Slice 4.6 (not yet implemented)
+
+### 1.11 Markdown Output Format (PLANNED - v1.7.0 ⏳)
+
+**Problem Statement:**
+
+Current ASCII box output (╔═╗║╚╠╟╢) is not rendered by OpenCode's Glamour TUI renderer. The plugin outputs raw ASCII art that appears as unformatted text in the terminal. Migration to Rich Markdown enables proper rendering with tables, headers, and styled text.
+
+**Design Decisions (Final):**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Migration approach | Full replacement, no legacy fallback | Clean break, no dual-mode complexity |
+| Display mode | Single mode only | User confirmed single mode sufficient |
+| Success format | GFM tables + h5 emoji headers | Glamour renders GFM natively |
+| Error format | h3 heading + bullet list + numbered steps | Clean, readable, consistent |
+| Progress bars | `█░` 12-char in code spans | Matches codex-quota plugin pattern |
+| Separators | No `---`, no blockquotes, no HTML | None render properly in Glamour |
+| Version bump | 1.7.0 (minor) | New feature, not breaking API |
+
+**Glamour Limitations (Confirmed):**
+
+- ✅ GFM tables render correctly
+- ✅ Headers (h1-h6) render correctly
+- ✅ Bold, italic, code spans render correctly
+- ✅ Bullet lists, numbered lists render correctly
+- ❌ `---` horizontal rules NOT rendered properly
+- ❌ `>` blockquotes NOT rendered properly
+- ❌ ALL HTML stripped (`<table>`, `<details>`, `<colspan>`, etc.)
+
+**Success Output Format:**
+
+```markdown
+### 📊 Z.ai GLM Coding Plan — Pro
+
+- **Platform**: ZAI
+- **Period**: 2026-03-29 17:00 → 2026-03-30 17:59
+
+##### 🪙 Quota Limits
+
+| Window | Usage | Progress | Resets In |
+|--------|------:|----------|-----------|
+| ⏱️ 5h Token | 40.5% | `█████░░░░░░░` | 3h 42m |
+| 📅 Weekly | 52.0% | `██████░░░░░░` | 4d 12h |
+| 🔌 MCP (1 Month) | 12.3% | `█░░░░░░░░░░░` | — |
+
+##### 📊 Quota Usage
+
+| Metric | Value |
+|--------|------:|
+| 💰 **Token Used** | **405,000 / 1,000,000** |
+| 🔌 **MCP Used** | **123 / 1,000** |
+
+##### 🔧 MCP Tool Breakdown
+
+| Tool | Count |
+|------|------:|
+| 🔍 Network Searches | 5,678 |
+| 🌐 Web Reads | 2,345 |
+| 📖 ZRead Calls | 890 |
+
+##### 🤖 Model Usage (24h)
+
+| Metric | Value |
+|--------|------:|
+| 🔢 Total Tokens | 12,500,000 (31% of 5h limit) |
+| ⏱️ 5h Window | 40.5% of 40,000,000 |
+| 📞 Total Calls | 1,234 |
+
+##### 🔧 Tool Usage (24h)
+
+| Tool | Count |
+|------|------:|
+| 🔍 Network Searches | 5,678 |
+| 🌐 Web Reads | 2,345 |
+| 🎭 ZRead Calls | 890 |
+```
+
+**Emoji Legend:**
+
+| Emoji | Usage | Context |
+|-------|-------|---------|
+| 📊 | Title + Quota Usage header | Statistics/overview |
+| 🪙 | Quota Limits section | Currency/quota |
+| ⏱️ | Time-based windows (5h) | Time-based limits |
+| 📅 | Weekly/monthly periods | Calendar periods |
+| 🔌 | MCP-related | Plugin connections |
+| 💰 | Token usage/budget | Budget tracking |
+| 🔢 | Token counts | Numerical data |
+| 📞 | API calls | Call counts |
+| 🔍 | Network searches | Search tool |
+| 🌐 | Web reads | Web tool |
+| 📖 | ZRead calls | Read tool |
+| 🎭 | ZRead (tool section) | Tool variant |
+| 🔧 | Section headers | Tools/MCP |
+
+**Error Output Format (Option 4 - List + Text):**
+
+```markdown
+### ⚠️ Authentication Failed
+
+- **Platform**: ZAI
+- **Status**: 401 Unauthorized
+
+Your token was rejected by the API.
+
+**How to fix:**
+1. Run `/connect` to re-authenticate
+2. Check if your subscription has expired
+```
+
+**Error Types:**
+
+| Error Type | Title | Metadata Fields |
+|------------|-------|-----------------|
+| No credentials | No Credentials Found | Platform: N/A |
+| Auth failure (401/403) | Authentication Failed | Platform, Status |
+| Timeout | Request Failed | Platform, Error message |
+| Parse error | Unexpected API Response | Platform, Endpoint |
+| Network error | Request Failed | Platform, Error message |
+
+**Files to Delete:**
+
+| File | Reason |
+|------|--------|
+| `src/utils/box-constants.ts` | ASCII box dimensions no longer needed |
+
+**Files to Rewrite:**
+
+| File | Change |
+|------|--------|
+| `src/index.ts` | Replace ~250 lines of box formatting with Markdown builders |
+| `src/utils/progress-bar.ts` | ASCII `#-` → Unicode `█░` 12-char bars |
+| `src/utils/error-formatter.ts` | Box error → Markdown h3 + list format |
+
+**Files Unchanged:**
+
+| File | Reason |
+|------|--------|
+| `src/api/client.ts` | HTTP layer, no output logic |
+| `src/api/platforms.ts` | Platform detection, no output logic |
+| `src/api/endpoints.ts` | Endpoint URLs, no output logic |
+| `src/utils/token-limits.ts` | Label logic unchanged |
+| `src/utils/reset-timer.ts` | Timer logic unchanged |
+| `src/utils/date-formatter.ts` | Date formatting unchanged |
+| `src/utils/time-window.ts` | Window calculation unchanged |
+
+**Status:** ⏳ PLANNED - v1.7.0 implementation
 
 ---
 
@@ -1546,7 +1694,58 @@ git push origin v1.0.0
 
 ## 8. Expected Output Examples
 
-### 8.1 Successful Query
+### 8.1 Successful Query (Markdown - v1.7.0+)
+
+```markdown
+### 📊 Z.ai GLM Coding Plan — Pro
+
+- **Platform**: ZAI
+- **Period**: 2026-03-29 17:00 → 2026-03-30 17:59
+
+##### 🪙 Quota Limits
+
+| Window | Usage | Progress | Resets In |
+|--------|------:|----------|-----------|
+| ⏱️ 5h Token | 40.5% | `█████░░░░░░░` | 3h 42m |
+| 📅 Weekly | 52.0% | `██████░░░░░░` | 4d 12h |
+| 🔌 MCP (1 Month) | 12.3% | `█░░░░░░░░░░░` | — |
+
+##### 📊 Quota Usage
+
+| Metric | Value |
+|--------|------:|
+| 💰 **Token Used** | **405,000 / 1,000,000** |
+| 🔌 **MCP Used** | **123 / 1,000** |
+
+##### 🔧 MCP Tool Breakdown
+
+| Tool | Count |
+|------|------:|
+| 🔍 Network Searches | 5,678 |
+| 🌐 Web Reads | 2,345 |
+| 📖 ZRead Calls | 890 |
+
+##### 🤖 Model Usage (24h)
+
+| Metric | Value |
+|--------|------:|
+| 🔢 Total Tokens | 12,500,000 (31% of 5h limit) |
+| ⏱️ 5h Window | 40.5% of 40,000,000 |
+| 📞 Total Calls | 1,234 |
+
+##### 🔧 Tool Usage (24h)
+
+| Tool | Count |
+|------|------:|
+| 🔍 Network Searches | 5,678 |
+| 🌐 Web Reads | 2,345 |
+| 🎭 ZRead Calls | 890 |
+```
+
+### 8.1a Successful Query (Legacy ASCII - v1.6.x)
+
+<details>
+<summary>Legacy ASCII output (click to expand)</summary>
 
 ```
 ╔════════════════════════════════════════════════════════════╗
@@ -1577,24 +1776,61 @@ git push origin v1.0.0
 ╚════════════════════════════════════════════════════════════╝
 ```
 
-### 8.2 No Credentials Found
+</details>
 
+### 8.2 Error: No Credentials Found (Markdown - v1.7.0+)
+
+```markdown
+### ⚠️ No Credentials Found
+
+- **Platform**: N/A
+
+No Z.ai or ZHIPU authentication detected.
+
+**How to fix:**
+1. Run `/connect` in OpenCode to authenticate
+2. Or set `ZAI_API_KEY` / `ZHIPU_API_KEY` environment variable
 ```
-╔════════════════════════════════════════════════════════════╗
-║  ❌ Z.ai Credentials Not Found                              ║
-╠════════════════════════════════════════════════════════════╣
-║                                                            ║
-║  Option 1: Use OpenCode authentication (Recommended)       ║
-║    $ opencode auth login                                   ║
-║    Select: Z.AI Coding Plan                                ║
-║                                                            ║
-║  Option 2: Set environment variable                        ║
-║    export ZAI_API_KEY="your-api-key"                       ║
-║                                                            ║
-║  For CN region:                                            ║
-║    export ZHIPU_API_KEY="your-api-key"                     ║
-║                                                            ║
-╚════════════════════════════════════════════════════════════╝
+
+### 8.3 Error: Authentication Failed (Markdown - v1.7.0+)
+
+```markdown
+### ⚠️ Authentication Failed
+
+- **Platform**: ZAI
+- **Status**: 401 Unauthorized
+
+Your token was rejected by the API.
+
+**How to fix:**
+1. Run `/connect` to re-authenticate
+2. Check if your subscription has expired
+```
+
+### 8.4 Error: Request Timeout (Markdown - v1.7.0+)
+
+```markdown
+### ⚠️ Request Failed
+
+- **Platform**: ZAI
+- **Error**: Connection timeout after 10s
+
+The API server did not respond in time.
+
+**Suggestions:**
+1. Check your network connection
+2. Try again in a few minutes
+```
+
+### 8.5 Error: Unexpected API Response (Markdown - v1.7.0+)
+
+```markdown
+### ⚠️ Unexpected API Response
+
+- **Platform**: ZAI
+- **Endpoint**: quota/limit
+
+The API returned data in an unexpected format. This may be a temporary issue or a version mismatch. Please try again later.
 ```
 
 ---
@@ -1630,6 +1866,8 @@ git push origin v1.0.0
 
  | Version | Date | Changes |
 |---------|------|---------|
+| 9.0 | 2026-03-30 | Added Section 1.11: Markdown Output Format (v1.7.0) — full migration from ASCII box to Rich Markdown for Glamour TUI. Updated Section 8 with new Markdown output examples (success + error formats). Design decisions: single mode, GFM tables, h5 emoji headers, `█░` progress bars, list-based errors, no `---`/blockquotes/HTML. |
+| 8.3 | 2026-01-21 | Added Slice 4.5: Next Reset Time display |
 | 8.2 | 2026-01-14 | Added comprehensive testing strategy with production-ready coverage (85%) - Node.js native test runner + Undici MockAgent, TypeScript-aligned categorization (Functional/Module/Integration/Contract/Error), custom error classes, Zod schema validation, and detailed implementation roadmap |
 
 ---
