@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-03-30
+
+### Fixed
+- **minimatch ReDoS vulnerabilities** - Added `minimatch` override (`^9.0.7`) in `package.json` to resolve HIGH severity Dependabot alerts (#7, #9)
+  - `matchOne()` combinatorial backtracking via multiple non-adjacent GLOBSTAR segments
+  - Affected transitive dev dependencies: `typescript-eslint`, `eslint`, `c8/test-exclude`
+
+### Technical
+- Added `"overrides": { "minimatch": "^9.0.7" }` to `package.json`
+- Updated `sonar-project.properties` version from outdated `1.2.0` to `1.6.3`
+- Updated wiki pages (Home, Quick-Reference, API-Documentation, Development-and-Contributing) with current test counts and version info
+- `npm audit` now reports **0 vulnerabilities** (was 6 high)
+
 ## [1.6.2] - 2026-03-22
 
 ### Fixed
