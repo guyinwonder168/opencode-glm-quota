@@ -53,6 +53,9 @@
   "peerDependencies": {
     "@opencode-ai/plugin": ">=0.1.0"
   },
+  "overrides": {
+    "minimatch": "^9.0.7"
+  },
   "publishConfig": {
     "access": "public"
   },
