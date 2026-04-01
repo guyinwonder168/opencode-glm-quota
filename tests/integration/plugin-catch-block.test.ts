@@ -1,7 +1,6 @@
 import { describe, test } from 'node:test';
 import * as assert from 'node:assert';
 import { GlmQuotaPlugin } from '../../src/index.js';
-import { BOX_WIDTH } from '../../src/utils/box-constants.js';
 
 type PluginContext = Parameters<typeof GlmQuotaPlugin>[0];
 type ToolExecutor = {
@@ -10,7 +9,7 @@ type ToolExecutor = {
 
 describe('Integration: Plugin Error Catch Block', () => {
   describe('Global Error Catch Behavior', () => {
-    test('should box generic Error objects', async () => {
+    test('should return Markdown for generic Error objects', async () => {
       // Set up credentials to bypass credential check
       process.env.ZAI_API_KEY = 'test-token';
 
@@ -34,12 +33,9 @@ describe('Integration: Plugin Error Catch Block', () => {
 
           const result = await (tool as unknown as ToolExecutor).execute();
 
-          // Verify boxed error format
-          const lines = result.split('\n');
-          assert.ok(result.includes('╔'), 'Output should contain top border');
-          assert.ok(result.includes('╚'), 'Output should contain bottom border');
+          assert.ok(result.startsWith('### ⚠️ '), 'Output should start with a Markdown error title');
+          assert.ok(!result.includes('╔'), 'Output should not contain box borders');
           assert.ok(result.includes('Date constructor failed'), 'Error message should be present');
-          assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL, 'Box width should match');
         } finally {
           global.Date = originalDate;
         }
@@ -48,7 +44,7 @@ describe('Integration: Plugin Error Catch Block', () => {
       }
     });
 
-    test('should box string errors', async () => {
+    test('should return Markdown for string errors', async () => {
       process.env.ZAI_API_KEY = 'test-token';
 
       try {
@@ -70,11 +66,9 @@ describe('Integration: Plugin Error Catch Block', () => {
 
           const result = await (tool as unknown as ToolExecutor).execute();
 
-          const lines = result.split('\n');
-          assert.ok(result.includes('╔'), 'Output should contain top border');
-          assert.ok(result.includes('╚'), 'Output should contain bottom border');
-          assert.ok(result.includes('String error message'), 'String error should be boxed');
-          assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL, 'Box width should match');
+          assert.ok(result.startsWith('### ⚠️ '), 'Output should start with a Markdown error title');
+          assert.ok(!result.includes('╚'), 'Output should not contain box borders');
+          assert.ok(result.includes('String error message'), 'String error should be present');
         } finally {
           global.Date = originalDate;
         }
@@ -83,7 +77,7 @@ describe('Integration: Plugin Error Catch Block', () => {
       }
     });
 
-    test('should handle error with newlines', async () => {
+    test('should handle error with newlines in Markdown output', async () => {
       process.env.ZAI_API_KEY = 'test-token';
 
       try {
@@ -105,11 +99,9 @@ describe('Integration: Plugin Error Catch Block', () => {
 
           const result = await (tool as unknown as ToolExecutor).execute();
 
-          const lines = result.split('\n');
-          assert.ok(result.includes('╔'), 'Output should contain top border');
-          assert.ok(result.includes('╚'), 'Output should contain bottom border');
+          assert.ok(result.startsWith('### ⚠️ '), 'Output should start with a Markdown error title');
+          assert.ok(!result.includes('╔'), 'Output should not contain box borders');
           assert.ok(result.includes('Line 1 error'), 'First line should be present');
-          assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL, 'Box width should match');
         } finally {
           global.Date = originalDate;
         }
@@ -119,8 +111,8 @@ describe('Integration: Plugin Error Catch Block', () => {
     });
   });
 
-  describe('Box Width Consistency', () => {
-    test('should maintain 60-character box width for all errors', async () => {
+  describe('Markdown Error Consistency', () => {
+    test('should keep Markdown title and message structure for all errors', async () => {
       process.env.ZAI_API_KEY = 'test-token';
 
       try {
@@ -141,20 +133,9 @@ describe('Integration: Plugin Error Catch Block', () => {
 
           const result = await (tool as unknown as ToolExecutor).execute();
 
-          const lines = result.split('\n');
-
-          // Check that all border lines have correct width
-          const borderLines = lines.filter(
-            line => line.startsWith('╔') || line.startsWith('╚') || line.startsWith('║')
-          );
-
-          for (const borderLine of borderLines) {
-            assert.strictEqual(
-              borderLine.length,
-              BOX_WIDTH.TOTAL,
-              `Border line should be ${BOX_WIDTH.TOTAL} chars: "${borderLine}"`
-            );
-          }
+          assert.ok(result.startsWith('### ⚠️ '), 'Markdown error title should be present');
+          assert.ok(result.includes('Test error message'), 'Error description should be present');
+          assert.ok(!result.includes('╔') && !result.includes('╚'), 'Box borders should be absent');
         } finally {
           global.Date = originalDate;
         }

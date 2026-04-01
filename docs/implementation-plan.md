@@ -20,9 +20,10 @@
 | Slice 4.5: Add Next Reset Time | ✅ **COMPLETE** | 2026-01-21 | 13 | N/A |
 | Slice 4.6: Global Installation & Setup Command | ✅ **COMPLETE** | 2026-01-31 | - | - |
 | Slice 5: Error Handling & Edge Cases | ✅ **COMPLETE** | 2026-02-01 | 101 | N/A |
-| Slice 6: Refactoring & Optimization | ✅ **COMPLETE** | 2026-02-01 | 101 | N/A |
+| Slice 6: Refactoring & Optimization | ✅ **COMPLETE** | 2026-02-01 | 110 | N/A |
+| Slice 7: Markdown Output Migration (v1.7.0) | ⏳ **PLANNED** | - | - | - |
 
-**Overall Progress:** 9/9 slices complete (100%)
+**Overall Progress:** 9/10 slices complete (Slice 7 planned for v1.7.0)
 
 ---
 
@@ -553,6 +554,210 @@ Package includes an installer command that copies `/integration/` files from npm
 
 ---
 
+### SLICE 7: Markdown Output Migration (v1.7.0) ⏳ **PLANNED**
+
+**User Value:** Plugin output renders properly in OpenCode's Glamour TUI with styled tables, headers, and progress bars instead of raw ASCII art.
+
+**Status:** ⏳ **PLANNED**
+**Priority:** High (user-facing output quality)
+**Target Version:** 1.7.0
+**Estimated Time:** ~2.5 hours (7 sub-slices, 25 files)
+**Branch:** `feature/markdown-output-v1.7.0`
+**Detailed Plan:** `docs/implementation-plan-v1.7.0.md`
+
+**Problem Statement:**
+Current ASCII box output (`╔═╗║╚╠╟╢`) is not rendered by OpenCode's Glamour TUI renderer. The plugin outputs raw ASCII art that appears as unformatted text in the terminal. Migration to Rich Markdown enables proper rendering with tables, headers, and styled text.
+
+**Design Decisions (from PRD v9.0 Section 1.11):**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Migration approach | Full replacement, no legacy fallback | Clean break, no dual-mode complexity |
+| Display mode | Single mode only | User confirmed single mode sufficient |
+| Success format | GFM tables + h5 emoji headers + emoji row labels | Glamour renders GFM natively |
+| Error format | `### ⚠️` h3 + bullet list metadata + numbered fix steps | Clean, readable, consistent |
+| Progress bars | `█░` 12-char in backtick code spans | Matches codex-quota plugin pattern |
+| Separators | No `---`, no blockquotes, no HTML | None render properly in Glamour |
+| Version bump | 1.7.0 (minor) | New feature, not breaking API |
+
+**Glamour Limitations (Confirmed):**
+- ✅ GFM tables, headers (h1-h6), bold, italic, code spans, lists render correctly
+- ❌ `---` horizontal rules, `>` blockquotes, ALL HTML do NOT render
+
+**Acceptance Criteria:**
+- [ ] Success output uses GFM tables with emoji headers (h5)
+- [ ] Error output uses h3 heading + bullet list + numbered steps
+- [ ] Progress bars use `█░` 12-char Unicode in code spans
+- [ ] No `---`, blockquotes, or HTML in output
+- [ ] `src/utils/box-constants.ts` deleted
+- [ ] `src/utils/markdown-constants.ts` created
+- [ ] All existing tests updated for new output format
+- [ ] Version bumped to 1.7.0
+- [ ] TypeScript compiles without errors
+- [ ] All lint checks pass
+
+**Impact Analysis:**
+
+| Action | File | Lines | Reason |
+|--------|------|-------|--------|
+| DELETE | `src/utils/box-constants.ts` | 44 | All box dimension constants unused |
+| CREATE | `src/utils/markdown-constants.ts` | ~30 | Progress bar width, section emojis, row label emojis, error templates |
+| REWRITE | `src/index.ts` | 743 | Delete ~250 lines box formatting, rewrite as Markdown builders |
+| REWRITE | `src/utils/progress-bar.ts` | 69 | Switch from ASCII `#-` to Unicode `█░` 12-char bars |
+| REWRITE | `src/utils/error-formatter.ts` | 65 | Replace `createBoxedError()` with Markdown error format |
+| REWRITE | `src/api/client.ts` | 276 | Replace all `createBoxedError()` calls with Markdown error format |
+
+**Files UNCHANGED:**
+- `src/api/platforms.ts` — Platform detection, no output logic
+- `src/api/endpoints.ts` — Endpoint URLs, no output logic
+- `src/utils/token-limits.ts` — Label logic unchanged
+- `src/utils/reset-timer.ts` — Timer logic unchanged
+- `src/utils/date-formatter.ts` — Date formatting unchanged
+- `src/utils/time-window.ts` — Window calculation unchanged
+
+**Tests to UPDATE (10 files, ~71 affected assertions):**
+
+| Test File | What Changes |
+|-----------|--------------|
+| `tests/integration/box-alignment.test.ts` | DELETE entirely (tests ASCII box alignment) |
+| `tests/integration/plugin-catch-block.test.ts` | Replace `╔╚║` checks + `BOX_WIDTH` with Markdown checks |
+| `tests/integration/error-handling.test.ts` | Replace box checks with Markdown error format checks |
+| `tests/integration/reset-time-display.test.ts` | Update output assertions for Markdown format |
+| `tests/functional/progress-bar.test.ts` | Update to test `█░` bars instead of `#-` |
+| `tests/error-handling/auth-errors.test.ts` | Replace `BOX_WIDTH` + `╔╚║` with Markdown checks |
+| `tests/error-handling/api-errors.test.ts` | Replace `BOX_WIDTH` + `╔╚║` with Markdown checks |
+| `tests/error-handling/parse-errors.test.ts` | Replace `BOX_WIDTH` + `╔╚║` with Markdown checks |
+| `tests/error-handling/network-errors.test.ts` | Replace `BOX_WIDTH` + `createBoxedError` with Markdown checks |
+| `tests/error-handling/token-sanitization.test.ts` | Likely minor or no changes |
+
+**Sub-Slice Breakdown (7 Slices):**
+
+**Slice 7.1: Foundation — Delete box-constants + Create markdown-constants**
+- Delete `src/utils/box-constants.ts`
+- Create `src/utils/markdown-constants.ts` (progress bar width, emojis, error templates)
+- Update all imports referencing `box-constants` (index.ts, progress-bar.ts, error-formatter.ts, client.ts)
+- **Verify:** `npm run build` compiles (tests will fail, expected)
+
+**Slice 7.2: Rewrite progress-bar.ts** *(parallel with 7.3)*
+- Update `createProgressBar()` to use `█` and `░` with 12-char width
+- Remove `ProgressBarOptions` (fixed width/chars now)
+- Update `formatProgressLine()` to return Markdown table cell content
+- Update `tests/functional/progress-bar.test.ts`
+- **Verify:** `npm run test -- tests/functional/progress-bar.test.ts` passes
+
+**Slice 7.3: Rewrite error-formatter.ts** *(parallel with 7.2)*
+- Delete `createBoxedError()` function
+- Create `createMarkdownError(title, metadata, description, steps?)`
+- Keep `sanitizeToken()` unchanged
+- **Verify:** `npm run test -- tests/error-handling/token-sanitization.test.ts` passes
+
+**Slice 7.4: Rewrite client.ts error formatting** *(depends on 7.3)*
+- Replace `createBoxedError` import with `createMarkdownError`
+- Update all error formatters: `formatNetworkError()`, `formatAuthError()`, `formatApiError()`, `formatParseError()`, `formatErrorWithDetails()`
+- Update error tests (auth, api, parse, network)
+- **Verify:** `npm run test -- tests/error-handling/` passes
+
+**Slice 7.5: Rewrite index.ts output formatting** *(depends on 7.1, 7.2, 7.4)*
+- Delete ~250 lines of box formatting functions (formatBoxLine, formatProgressBoxLine, getDisplayWidth, etc.)
+- Create new Markdown builders: formatMarkdownHeader, formatQuotaLimitsTable, formatQuotaUsageTable, formatMcpBreakdownTable, formatModelUsageTable, formatToolUsageTable, formatMarkdownOutput
+- Update `createCredentialError()` to return Markdown error
+- Update plugin `execute()` catch block
+- **Verify:** `npm run build` compiles
+
+**Slice 7.6: Update integration tests** *(depends on 7.5)*
+- DELETE `tests/integration/box-alignment.test.ts`
+- UPDATE `tests/integration/plugin-catch-block.test.ts` (Markdown format checks)
+- UPDATE `tests/integration/error-handling.test.ts` (Markdown checks)
+- UPDATE `tests/integration/reset-time-display.test.ts` (Markdown table format)
+- CREATE `tests/integration/markdown-output.test.ts` (full Markdown output structure)
+- **Verify:** `npm run test -- tests/integration/` passes
+
+**Slice 7.7: Version bump + Final cleanup** *(depends on all above)*
+- Update `package.json` version: `1.6.3` → `1.7.0`
+- Update `sonar-project.properties` version
+- Update `CHANGELOG.md` with v1.7.0 entry
+- Update `README.md` output example to show Markdown format
+- Verify no `box-constants` references remain
+- **Verify:** `npm run build && npm run lint && npm test` all pass
+
+**Execution Order & Dependencies:**
+```
+Slice 7.1 (foundation)
+    ↓
+Slice 7.2 (progress bar)  ←  independent from 7.3
+Slice 7.3 (error formatter) ←  independent from 7.2
+    ↓                       ↓
+Slice 7.4 (client errors) ← depends on 7.3
+    ↓
+Slice 7.5 (index.ts output) ← depends on 7.1, 7.2, 7.4
+    ↓
+Slice 7.6 (integration tests) ← depends on 7.5
+    ↓
+Slice 7.7 (version bump + cleanup) ← depends on all above
+```
+
+**Parallel opportunity:** Slices 7.2 and 7.3 can be done in parallel.
+
+**Risk Assessment:**
+
+| Risk | Mitigation |
+|------|------------|
+| Markdown table rendering differs in Glamour | Test in OpenCode TUI before merge |
+| Progress bar display width in code spans | `█░` are single-width Unicode, should render fine |
+| Missing emoji support in some terminals | Emojis degrade gracefully — tables still render |
+| Breaking change for users parsing output | Version bump to 1.7.0 (minor), document in CHANGELOG |
+
+**Expected Markdown Output (Success):**
+```markdown
+### 📊 Z.ai GLM Coding Plan — Pro
+
+- **Platform**: ZAI
+- **Period**: 2026-03-29 17:00 → 2026-03-30 17:59
+
+##### 🪙 Quota Limits
+
+| Window | Usage | Progress | Resets In |
+|--------|------:|----------|-----------|
+| ⏱️ 5h Token | 40.5% | `█████░░░░░░░` | 3h 42m |
+| 🔌 MCP (1 Month) | 12.3% | `█░░░░░░░░░░░` | — |
+
+##### 🤖 Model Usage (24h)
+
+| Metric | Value |
+|--------|------:|
+| 🔢 Total Tokens | 12,500,000 |
+| 📞 Total Calls | 1,234 |
+
+##### 🔧 Tool Usage (24h)
+
+| Tool | Count |
+|------|------:|
+| 🔍 Network Searches | 5,678 |
+| 🌐 Web Reads | 2,345 |
+```
+
+**Expected Markdown Output (Error):**
+```markdown
+### ⚠️ Authentication Failed
+
+- **Platform**: ZAI
+- **Status**: 401 Unauthorized
+
+Your token was rejected by the API.
+
+**How to fix:**
+1. Run `/connect` to re-authenticate
+2. Check if your subscription has expired
+```
+
+**Dependencies:** Slice 6 (all features complete, code clean)
+
+**References:**
+- PRD v9.0 Section 1.11 — Markdown Output Format
+- **Detailed execution plan:** `docs/implementation-plan-v1.7.0.md`
+
+---
+
 ## 4. Phase & Sprint Structure
 
 ### Phase 1: Foundation (Slices 1-2)
@@ -590,9 +795,9 @@ Package includes an installer command that copies `/integration/` files from npm
 
 **Phase 2 Exit Criteria:**
 - [x] Single endpoint query works end-to-end
-- [ ] Integration tests pass
-- [ ] ASCII table displays correctly
-- [ ] Progress bars render properly
+- [x] Integration tests pass
+- [x] ASCII table displays correctly
+- [x] Progress bars render properly
 
 ---
 
@@ -608,9 +813,9 @@ Package includes an installer command that copies `/integration/` files from npm
 **Phase 3 Exit Criteria:**
 - [x] All three endpoints queried
 - [x] Full output displays correctly
-- [ ] Integration tests pass
-- [ ] JSON truncation works
-- [ ] Query params URL-encoded
+- [x] Integration tests pass
+- [x] JSON truncation works
+- [x] Query params URL-encoded
 
 ---
 
@@ -647,6 +852,28 @@ Package includes an installer command that copies `/integration/` files from npm
 - [x] Documentation complete
 - [x] CHANGELOG updated
 - [x] Ready for npm publish
+
+---
+
+### Phase 6: Markdown Output Migration (Slice 7)
+
+**Goal:** Migrate output from ASCII box format to Rich Markdown for Glamour TUI rendering
+
+**Sprint 7: Markdown Migration**
+- Complete Slice 7 (7 sub-slices: 7.1–7.7)
+- ~2.5 hours (25 files)
+- Deliverable: Plugin outputs GFM Markdown that renders correctly in OpenCode's Glamour TUI
+
+**Phase 6 Exit Criteria:**
+- [ ] Success output uses GFM tables with emoji headers
+- [ ] Error output uses h3 heading + bullet list
+- [ ] Progress bars use `█░` Unicode in code spans
+- [ ] `src/utils/box-constants.ts` deleted
+- [ ] `src/utils/markdown-constants.ts` created
+- [ ] All tests updated and passing
+- [ ] Version bumped to 1.7.0
+- [ ] TypeScript compiles, lint passes
+- [ ] No references to `box-constants` remain in source or tests
 
 ---
 
@@ -773,13 +1000,20 @@ npm run test -- --watch
 
 ```
 Slice 1 (Auth) ───┐
-                  ├───> Slice 1.5 (Command/Skill) ────┐
+                   ├───> Slice 1.5 (Command/Skill) ────┐
 Slice 2 (Utils) ───┘                                  │
-                                                      ├───> Slice 3 (Single Endpoint)
-                                                              │
-                                                              ├───> Slice 5 (Error Handling)
-                                                              │
-                                                              └───> Slice 6 (Refactoring)
+                                                       ├───> Slice 3 (Single Endpoint)
+                                                               │
+                                                               ├───> Slice 4 (Multiple Endpoints)
+                                                               │         │
+                                                               │         ├───> Slice 4.5 (Reset Time)
+                                                               │         ├───> Slice 4.6 (Installation)
+                                                               │         │
+                                                               │         └───> Slice 5 (Error Handling)
+                                                               │                   │
+                                                               │                   └───> Slice 6 (Refactoring)
+                                                               │                             │
+                                                               │                             └───> Slice 7 (Markdown Migration v1.7.0)
 ```
 
 **Key Dependencies:**
@@ -788,8 +1022,11 @@ Slice 2 (Utils) ───┘                                  │
 3. **Slice 2 should parallelize with Slice 1** - Utility functions independent of auth
 4. **Slice 3 depends on both** - Needs auth + utilities
 5. **Slice 4 depends on Slice 3** - Extends single endpoint to multiple
-6. **Slice 5 depends on Slice 4** - Error handling for complete feature
-7. **Slice 6 depends on Slice 5** - Refactor complete feature
+6. **Slice 4.5 depends on Slice 4** - Enhances quota display with reset time
+7. **Slice 4.6 depends on Slice 1.5** - Extends installation with setup command
+8. **Slice 5 depends on Slice 4** - Error handling for complete feature
+9. **Slice 6 depends on Slice 5** - Refactor complete feature
+10. **Slice 7 depends on Slice 6** - Markdown migration on clean codebase
 
 ### 6.2 Technical Risks
 
@@ -822,19 +1059,19 @@ Slice 2 (Utils) ───┘                                  │
 - [x] Plugin shows progress bars for quota percentages
 - [x] Plugin handles network errors gracefully
 - [x] Plugin handles authentication errors with user-friendly messages
-- [ ] Plugin works on both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
+- [x] Plugin works on both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
 
 ### 7.2 Technical Requirements
 
-- [ ] TypeScript strict mode enabled
-- [ ] Test coverage ≥ 85%
-- [ ] All tests pass (no failures, no flakes)
-- [ ] TypeScript compiles without errors
-- [ ] Lint checks pass (eslint configured)
-- [ ] Code follows AGENTS.md style guidelines
-- [ ] No `any` types (use proper TypeScript types)
-- [ ] Constants use UPPER_SNAKE_CASE
-- [ ] Functions have clear, descriptive names
+- [x] TypeScript strict mode enabled
+- [x] Test coverage ≥ 85%
+- [x] All tests pass (no failures, no flakes)
+- [x] TypeScript compiles without errors
+- [x] Lint checks pass (eslint configured)
+- [x] Code follows AGENTS.md style guidelines
+- [x] No `any` types (use proper TypeScript types)
+- [x] Constants use UPPER_SNAKE_CASE
+- [x] Functions have clear, descriptive names
 
 ### 7.3 TDD Requirements
 
@@ -848,11 +1085,11 @@ Slice 2 (Utils) ───┘                                  │
 
 ### 7.4 Documentation Requirements
 
-- [ ] README.md complete with installation and usage
-- [ ] CHANGELOG.md updated with version 1.0.0
-- [ ] Function documentation (JSDoc) for all exports
-- [ ] API reference in README (endpoints, auth, time window)
-- [ ] Example output in README
+- [x] README.md complete with installation and usage
+- [x] CHANGELOG.md updated with version 1.0.0
+- [x] Function documentation (JSDoc) for all exports
+- [x] API reference in README (endpoints, auth, time window)
+- [x] Example output in README
 
 ---
 
@@ -879,8 +1116,9 @@ Slice 2 (Utils) ───┘                                  │
 4. Slice 4 (Multiple Endpoints) → 3-4 days
 5. Slice 5 (Error Handling) → 3-4 days
 6. Slice 6 (Refactoring) → 2-3 days
+7. Slice 7 (Markdown Migration v1.7.0) → ~2.5 hours
 
-**Total Estimated Time:** 15-21 days
+**Total Estimated Time:** 18-25 days (Slices 1–6 complete; Slice 7 remaining ~2.5 hours)
 
 ### 8.3 TDD Workflow Per Task
 
@@ -978,12 +1216,12 @@ Slice 2 (Utils) ───┘                                  │
 
 ### 9.1 Code Quality Metrics
 
-- [ ] Test coverage: ≥ 85%
-- [ ] TypeScript strict mode: Enabled
-- [ ] Lint errors: 0
-- [ ] TypeScript errors: 0
-- [ ] Test failures: 0
-- [ ] Flaky tests: 0
+- [x] Test coverage: ≥ 85%
+- [x] TypeScript strict mode: Enabled
+- [x] Lint errors: 0
+- [x] TypeScript errors: 0
+- [x] Test failures: 0
+- [x] Flaky tests: 0
 
 ### 9.2 Functional Metrics
 
@@ -996,12 +1234,12 @@ Slice 2 (Utils) ───┘                                  │
 
 ### 9.3 Process Metrics
 
-- [ ] Every feature implemented with TDD
-- [ ] Every test written before implementation
-- [ ] Every test watched fail (RED phase)
-- [ ] No skipped tests
-- [ ] Frequent commits (every 1-2 features)
-- [ ] Documentation kept current
+- [x] Every feature implemented with TDD
+- [x] Every test written before implementation
+- [x] Every test watched fail (RED phase)
+- [x] No skipped tests
+- [x] Frequent commits (every 1-2 features)
+- [x] Documentation kept current
 
 ---
 
@@ -1519,30 +1757,21 @@ This plan provides:
 
 **Current Status:**
 
-✅ **Slice 1-4.6 Complete** (8/9 slices, 88.9%)
-⏳ **Slice 5 In Progress** - Error Handling & Edge Cases (16 tasks, 6 phases)
-⏳ **Slice 6 Pending** - Refactoring & Optimization
+✅ **Slice 1-6 Complete** (9/9 slices, 100%) — Package v1.6.3, 110 tests passing
+⏳ **Slice 7 Planned** - Markdown Output Migration (v1.7.0)
 
 **Next Steps:**
 
-1. Continue Slice 5: Error Handling & Edge Cases (16 tasks)
-   - Phase 1: Setup & Infrastructure (Tasks 1-3)
-   - Phase 2: Network Error Handling (Tasks 4-5)
-   - Phase 3: Authentication Error Handling (Tasks 6-7)
-   - Phase 4: API & Parse Error Handling (Tasks 8-10)
-   - Phase 5: Integration & Consistency (Tasks 11-14)
-   - Phase 6: Finalization (Tasks 15-16)
-2. Implement network error handling (timeout, connection refused)
-3. Implement auth error messages (401, 403)
-4. Add parse error recovery (invalid JSON, missing fields)
-5. Test error paths with mock responses
-6. Verify token sanitization in error messages
-7. Run full test suite (90+ tests expected)
-8. Then proceed to Slice 6: Refactoring & Optimization
+1. Implement Slice 7: Markdown Output Migration (v1.7.0)
+   - Replace ASCII box output with Rich Markdown for Glamour TUI
+   - Migrate progress bars from `#-` to `█░` Unicode 12-char format
+   - Migrate error format from boxed ASCII to Markdown h3 + list
+   - Delete `src/utils/box-constants.ts`
+   - Update all tests for new output format
 
 ---
 
-*Document Version: 1.5*
+*Document Version: 1.6*
 *Created: 2026-01-17*
-*Last Updated: 2026-01-31*
-*Status: Slice 5 In Progress (16 tasks planned)*
+*Last Updated: 2026-04-01*
+*Status: Slices 1-6 complete (110 tests passing), Slice 7 (Markdown Migration v1.7.0) planned*

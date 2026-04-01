@@ -1,7 +1,6 @@
 import { describe, test } from 'node:test';
 import * as assert from 'node:assert';
 import { GlmQuotaPlugin } from '../../src/index.js';
-import { BOX_WIDTH } from '../../src/utils/box-constants.js';
 
 type PluginContext = Parameters<typeof GlmQuotaPlugin>[0];
 type ToolExecutor = {
@@ -9,7 +8,7 @@ type ToolExecutor = {
 };
 
 describe('Integration: Error Handling in src/index.ts', () => {
-  test('should return boxed error message when Date constructor throws', async () => {
+  test('should return Markdown error message when Date constructor throws', async () => {
     // Setup credentials to reach queryAllUsage
     process.env.ZAI_API_KEY = 'test-token';
 
@@ -32,11 +31,9 @@ describe('Integration: Error Handling in src/index.ts', () => {
 
       const result = await (tool as unknown as ToolExecutor).execute();
 
-      const lines = result.split('\n');
-      assert.ok(result.includes('╔'), 'Output should contain top border');
-      assert.ok(result.includes('╚'), 'Output should contain bottom border');
+      assert.ok(result.startsWith('### ⚠️ '), 'Output should start with a Markdown error title');
+      assert.ok(!result.includes('╔') && !result.includes('╚'), 'Output should not contain box borders');
       assert.ok(result.includes('Date failure'), `Output should contain error message. Got: ${result}`);
-      assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL, 'Box width should match');
     } finally {
       // Cleanup
       global.Date = originalDate;

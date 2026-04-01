@@ -5,7 +5,7 @@
 
 import * as https from 'node:https';
 import type { Endpoints } from './endpoints.js';
-import { sanitizeToken, createBoxedError } from '../utils/error-formatter.js';
+import { sanitizeToken, createMarkdownError } from '../utils/error-formatter.js';
 
 /**
  * HTTP request timeout in milliseconds (10 seconds)
@@ -14,7 +14,6 @@ const REQUEST_TIMEOUT_MS = 10000;
 
 /**
  * Maximum length for response body in parse errors before truncation
- * Long response bodies are truncated to fit in boxed error format
  */
 const MAX_PARSE_ERROR_BODY_LENGTH = 200;
 
@@ -53,19 +52,29 @@ interface RequestOptions {
 }
 
 /**
- * Format network error with boxed message
+ * Format network error with Markdown message
  * @param error - Network error object
  * @param authToken - Auth token to sanitize from error messages
- * @returns Formatted error with boxed message
+ * @returns Formatted error with Markdown message
  */
 function formatNetworkError(error: NetworkError, authToken: string): Error {
   const code = error.code;
   let message = '';
 
   if (code === 'ETIMEDOUT') {
-    message = createBoxedError('Request timed out. Please try again.');
+    message = createMarkdownError(
+      'Request Failed',
+      { Code: code },
+      'Connection timeout after 10 seconds.',
+      ['Check your network connection.', 'Try again.']
+    );
   } else if (code === 'ECONNREFUSED') {
-    message = createBoxedError('Unable to connect to server.');
+    message = createMarkdownError(
+      'Request Failed',
+      { Code: code },
+      'Unable to connect to server.',
+      ['Check your network connection.', 'Try again.']
+    );
   } else {
     // Other network errors - sanitize token from original message
     message = sanitizeToken(error.message, authToken);
@@ -77,23 +86,30 @@ function formatNetworkError(error: NetworkError, authToken: string): Error {
 }
 
 function formatErrorWithDetails(
+  title: string,
   baseMessage: string,
+  statusCode: number,
   sanitizedBody: string,
-  ignoredBodies: readonly string[]
+  ignoredBodies: readonly string[],
+  steps: string[]
 ): string {
+  const metadata: Record<string, string> = {
+    Status: String(statusCode)
+  };
+
   if (sanitizedBody && !ignoredBodies.includes(sanitizedBody)) {
-    return createBoxedError(`${baseMessage} Details: ${sanitizedBody}`);
+    metadata.Details = sanitizedBody;
   }
 
-  return createBoxedError(baseMessage);
+  return createMarkdownError(title, metadata, baseMessage, steps);
 }
 
 /**
- * Format authentication error with boxed message
+ * Format authentication error with Markdown message
  * @param statusCode - HTTP status code (401, 403)
  * @param responseBody - Response body from API
  * @param authToken - Auth token to sanitize from error messages
- * @returns Formatted error with boxed message
+ * @returns Formatted error with Markdown message
  */
 function formatAuthError(statusCode: number, responseBody: string, authToken: string): Error {
   // Sanitize response body first to prevent token exposure
@@ -102,30 +118,40 @@ function formatAuthError(statusCode: number, responseBody: string, authToken: st
 
   if (statusCode === 401) {
     message = formatErrorWithDetails(
+      'Authentication Failed',
       'Authentication failed. Please check your credentials.',
+      statusCode,
       sanitizedBody,
-      [AUTH_401_DEFAULT_BODY]
+      [AUTH_401_DEFAULT_BODY],
+      ['Run `/connect` to re-authenticate.', 'Check if your subscription has expired.']
     );
   } else if (statusCode === 403) {
     message = formatErrorWithDetails(
+      'Access Denied',
       "Access denied. You don't have permission.",
+      statusCode,
       sanitizedBody,
-      [AUTH_403_DEFAULT_BODY]
+      [AUTH_403_DEFAULT_BODY],
+      ['Check your account permissions.', 'Try again after access is restored.']
     );
   } else {
-    // For other auth errors, use sanitized response body
-    message = createBoxedError(sanitizedBody);
+    message = createMarkdownError(
+      'Authentication Error',
+      { Status: String(statusCode) },
+      sanitizedBody,
+      ['Check your credentials and try again.']
+    );
   }
 
   return new Error(message);
 }
 
 /**
- * Format API error with boxed message
+ * Format API error with Markdown message
  * @param statusCode - HTTP status code (429, 500, etc.)
  * @param responseBody - Response body from API
  * @param authToken - Auth token to sanitize from error messages
- * @returns Formatted error with boxed message
+ * @returns Formatted error with Markdown message
  */
 function formatApiError(statusCode: number, responseBody: string, authToken: string): Error {
   // Sanitize response body first to prevent token exposure
@@ -134,29 +160,39 @@ function formatApiError(statusCode: number, responseBody: string, authToken: str
 
   if (statusCode === 429) {
     message = formatErrorWithDetails(
+      'Rate Limited',
       'Too many requests. Please try again later.',
+      statusCode,
       sanitizedBody,
-      [API_429_DEFAULT_BODY]
+      [API_429_DEFAULT_BODY],
+      ['Wait a moment and retry.']
     );
   } else if (statusCode >= 500) {
     message = formatErrorWithDetails(
+      'Server Error',
       'Server error. Please try again later.',
+      statusCode,
       sanitizedBody,
-      API_5XX_DEFAULT_BODIES
+      API_5XX_DEFAULT_BODIES,
+      ['Try again later.']
     );
   } else {
-    // For other API errors, use sanitized response body
-    message = createBoxedError(sanitizedBody);
+    message = createMarkdownError(
+      'Request Failed',
+      { Status: String(statusCode) },
+      sanitizedBody,
+      ['Try again.']
+    );
   }
 
   return new Error(message);
 }
 
 /**
- * Format JSON parse error with boxed message
+ * Format JSON parse error with Markdown message
  * @param responseBody - Response body that failed to parse
  * @param authToken - Auth token to sanitize from error messages
- * @returns Formatted error with boxed message
+ * @returns Formatted error with Markdown message
  */
 function formatParseError(responseBody: string, authToken: string): Error {
   // Sanitize response body first to prevent token exposure
@@ -164,16 +200,25 @@ function formatParseError(responseBody: string, authToken: string): Error {
   
   // Use simple message if body is empty
   if (!sanitizedBody) {
-    return new Error(createBoxedError('Invalid JSON response. The server returned malformed data.'));
+    return new Error(createMarkdownError(
+      'Unexpected Response',
+      {},
+      'Invalid JSON response. The server returned malformed data.',
+      ['Try again later.']
+    ));
   }
-  
-  // Truncate extremely long response bodies to fit in boxed format
-  // createBoxedError will handle word wrapping across multiple lines
+
+  // Truncate extremely long response bodies to keep the Details section readable
   const bodyToDisplay = sanitizedBody.length > MAX_PARSE_ERROR_BODY_LENGTH 
     ? `${sanitizedBody.substring(0, MAX_PARSE_ERROR_BODY_LENGTH)}...` 
     : sanitizedBody;
   
-  const message = createBoxedError(`Invalid JSON response. Details: ${bodyToDisplay}`);
+  const message = createMarkdownError(
+    'Unexpected Response',
+    { Details: bodyToDisplay },
+    'Invalid JSON response. The server returned malformed data.',
+    ['Try again later.']
+  );
   return new Error(message);
 }
 
@@ -273,4 +318,4 @@ async function queryEndpoint(
 }
 
 export type { ApiResponse };
-export { makeRequest, queryEndpoint, formatNetworkError, createBoxedError, formatAuthError, formatApiError, formatParseError };
+export { makeRequest, queryEndpoint, formatNetworkError, createMarkdownError, formatAuthError, formatApiError, formatParseError };

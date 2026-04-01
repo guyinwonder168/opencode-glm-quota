@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-04-02
+
+### Changed
+- Switched plugin output from fixed-width ASCII boxes to GitHub-Flavored Markdown optimized for OpenCode's Glamour TUI.
+- Quota, model usage, MCP breakdown, and tool usage sections now render as Markdown tables with emoji labels and Unicode progress bars.
+
+### Fixed
+- Credential, network, auth, API, and catch-block errors now render as Markdown headings with structured recovery steps instead of boxed text.
+- Reset countdowns now display directly in quota table rows using compact `4h 42m` and `4d 12h` formats.
+
+### Technical
+- Removed the obsolete `tests/integration/box-alignment.test.ts` suite tied to box-width formatting.
+- Added Markdown-focused integration coverage for full output structure and reset-time rendering.
+
 ## [1.6.3] - 2026-03-30
 
 ### Fixed

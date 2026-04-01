@@ -19,7 +19,7 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 - 🔧 View MCP tool usage (web_search, web_reader, etc.)
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
 - 🔐 Automatic credential discovery via OpenCode authentication context
-- 📈 Visual progress bars for quota percentages (ASCII for terminal alignment)
+- 📈 Visual progress bars for quota percentages rendered in Markdown code spans
 - ⏰ Reset countdown display - Shows when quota resets (hours/days)
 - 🏷️ Account plan display - Shows your subscription tier (Lite, Pro, etc.)
 - ⚡ Fail-fast error handling (no retry logic - user controls when to retry)
@@ -127,37 +127,50 @@ After authentication, simply run:
 
 ### Output Example
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║                                                                  ║
-║           Z.ai GLM Coding Plan Usage Statistics                  ║
-║                                                                  ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Platform: Z.AI                                                  ║
-║  Plan:     Pro                                                   ║
-║  Period:   2026-01-17 21:00:00 → 2026-01-18 20:59:59             ║
-╠══════════════════════════════════════════════════════════════════╣
-║  QUOTA LIMITS                                                    ║
-╟──────────────────────────────────────────────────────────────────╢
-║  Token usage(5 Hour)      [###################--------]  40.5%   ║
-║  Resets in 3 hours 42 minutes                                    ║
-║  Token usage(Weekly)      [########------------------]  52.0%    ║
-║  Resets in 4 days and 12 hours                                   ║
-║  MCP usage(1 Month)       [####-----------------------]  12.3%   ║
-║       Used: 123/1,000                                            ║
-╠══════════════════════════════════════════════════════════════════╣
-║  MODEL USAGE (24h)                                               ║
-╟──────────────────────────────────────────────────────────────────╢
-║  Total Tokens (24h): 12,500,000 (31% of 5h limit)                ║
-║  5h Window Usage: 40.5% of 40,000,000                            ║
-║  Total Calls: 1,234                                              ║
-╠══════════════════════════════════════════════════════════════════╣
-║  TOOL/MCP USAGE (24h)                                            ║
-╟──────────────────────────────────────────────────────────────────╢
-║  Network Searches: 5,678                                         ║
-║  Web Reads: 2,345                                                ║
-║  ZRead Calls: 890                                                ║
-╚══════════════════════════════════════════════════════════════════╝
+```markdown
+### 📊 Z.ai GLM Coding Plan — Pro
+
+- **Platform**: Z.AI
+- **Period**: 2026-01-17 21:00:00 → 2026-01-18 20:59:59
+
+##### 🪙 Quota Limits
+
+| Window | Usage | Progress | Resets In |
+|--------|------:|----------|-----------|
+| ⏱️ 5h Token | 40.5% | `█████░░░░░░░` | 3h 42m |
+| 📅 Weekly | 52.0% | `██████░░░░░░` | 4d 12h |
+| 🔌 MCP (1 Month) | 12.3% | `█░░░░░░░░░░░` | — |
+
+##### 📊 Quota Usage
+
+| Metric | Value |
+|--------|------:|
+| 💰 **Token Used** | **12,500,000 / 40,000,000** |
+| 🔌 **MCP Used** | **123 / 1000** |
+
+##### 🔧 MCP Tool Breakdown
+
+| Tool | Count |
+|------|------:|
+| 🔍 Network Searches | 5,678 |
+| 🌐 Web Reads | 2,345 |
+| 📖 ZRead Calls | 890 |
+
+##### 🤖 Model Usage (24h)
+
+| Metric | Value |
+|--------|------:|
+| 🔢 Total Tokens | 12,500,000 (31% of 5h limit) |
+| ⏱️ 5h Window | 40.5% of 40,000,000 |
+| 📞 Total Calls | 1,234 |
+
+##### 🛠️ Tool Usage (24h)
+
+| Tool | Count |
+|------|------:|
+| 🔍 Network Searches | 5,678 |
+| 🌐 Web Reads | 2,345 |
+| 🎭 ZRead Calls | 890 |
 ```
 
 ### Error Handling
@@ -166,22 +179,15 @@ The plugin uses fail-fast error handling. If any API request fails, it will disp
 
 **Example Error Output:**
 
-```
-╔══════════════════════════════════════════════════════════════════╗
-║                                                                  ║
-║  ❌ Z.ai Credentials Not Found                                   ║
-║                                                                  ║
-║  Please authenticate first:                                      ║
-║                                                                  ║
-║  1. Run /connect command in OpenCode TUI                         ║
-║  2. Select "Z.AI Coding Plan" or "Z.AI"                          ║
-║  3. Or "Zhipu" (for China region)                                ║
-║                                                                  ║
-║  For dev/testing, set environment:                               ║
-║  - ZAI_API_KEY (global)                                          ║
-║  - ZHIPU_API_KEY (China)                                         ║
-║                                                                  ║
-╚══════════════════════════════════════════════════════════════════╝
+```markdown
+### ⚠️ Credentials Not Found
+
+Please authenticate first.
+
+**How to fix:**
+1. Run `/connect` command in OpenCode TUI.
+2. Select "Z.AI Coding Plan", "Z.AI", or "Zhipu".
+3. For development/testing, set `ZAI_API_KEY` or `ZHIPU_API_KEY`.
 ```
 
 ## API Reference
