@@ -1,5 +1,8 @@
 /**
- * Functional tests for progress bar module
+ * Functional tests for progress bar module (v1.7.0 Markdown format)
+ * 
+ * Progress bars use Unicode █░ characters, fixed 12-char width,
+ * rendered in Markdown code spans for OpenCode's Glamour TUI.
  */
 
 import { describe, test } from 'node:test';
@@ -9,55 +12,60 @@ import { createProgressBar, formatPercentage, formatProgressLine } from '../../s
 describe('createProgressBar', () => {
   test('creates full bar at 100%', () => {
     const result = createProgressBar(100);
-    assert.strictEqual(result.length, 30);
-    assert.ok(result.includes('#'));
-    assert.ok(!result.includes('-'));
+    assert.strictEqual(result, '████████████');
+    assert.strictEqual(result.length, 12);
   });
 
   test('creates empty bar at 0%', () => {
     const result = createProgressBar(0);
-    assert.strictEqual(result.length, 30);
-    assert.ok(!result.includes('#'));
-    assert.ok(result.includes('-'));
+    assert.strictEqual(result, '░░░░░░░░░░░░');
+    assert.strictEqual(result.length, 12);
   });
 
   test('creates half-filled bar at 50%', () => {
     const result = createProgressBar(50);
-    assert.strictEqual(result.length, 30);
-    const filledCount = (result.match(/#/g) || []).length;
-    const emptyCount = (result.match(/-/g) || []).length;
-    assert.strictEqual(filledCount, 15);
-    assert.strictEqual(emptyCount, 15);
+    assert.strictEqual(result, '██████░░░░░░');
+  });
+
+  test('creates 40% bar', () => {
+    const result = createProgressBar(40);
+    // 40% of 12 = 4.8, rounds to 5
+    assert.strictEqual(result, '█████░░░░░░░');
   });
 
   test('clamps percentage to 100', () => {
     const result = createProgressBar(150);
-    assert.strictEqual(result.length, 30);
-    assert.ok(result.includes('#'));
-    assert.ok(!result.includes('-'));
+    assert.strictEqual(result, '████████████');
   });
 
   test('clamps percentage to 0', () => {
     const result = createProgressBar(-50);
-    assert.strictEqual(result.length, 30);
-    assert.ok(!result.includes('#'));
-    assert.ok(result.includes('-'));
+    assert.strictEqual(result, '░░░░░░░░░░░░');
   });
 
-  test('uses custom width', () => {
-    const result = createProgressBar(50, { width: 10 });
-    assert.strictEqual(result.length, 10);
+  test('handles small percentage', () => {
+    const result = createProgressBar(1);
+    // 1% of 12 = 0.12, rounds to 0
+    assert.strictEqual(result, '░░░░░░░░░░░░');
   });
 
-  test('uses custom characters', () => {
-    const result = createProgressBar(50, { 
-      filledChar: '■', 
-      emptyChar: '□' 
-    });
-    assert.ok(result.includes('■'));
-    assert.ok(result.includes('□'));
-    assert.ok(!result.includes('#'));
-    assert.ok(!result.includes('-'));
+  test('handles 99.9% (rounds to full)', () => {
+    const result = createProgressBar(99.9);
+    // 99.9% of 12 = 11.988, rounds to 12
+    assert.strictEqual(result, '████████████');
+  });
+
+  test('always returns exactly 12 characters', () => {
+    for (const pct of [0, 1, 25, 33, 50, 66, 75, 99, 100]) {
+      assert.strictEqual(createProgressBar(pct).length, 12);
+    }
+  });
+
+  test('only contains █ and ░ characters', () => {
+    for (const pct of [0, 25, 50, 75, 100]) {
+      const result = createProgressBar(pct);
+      assert.ok(/^^[█░]+$/.test(result), `Invalid chars in bar for ${pct}%: ${result}`);
+    }
   });
 });
 
@@ -80,16 +88,24 @@ describe('formatPercentage', () => {
 });
 
 describe('formatProgressLine', () => {
-  test('formats complete line', () => {
+  test('returns progress bar in code span', () => {
     const result = formatProgressLine('Test Label', 75);
-    assert.ok(result.includes('Test Label'));
-    assert.ok(result.includes('75.0%'));
-    assert.ok(result.includes('#'));
-    assert.ok(result.includes('-'));
+    assert.strictEqual(result, '`█████████░░░`');
   });
 
-  test('pads label to 20 characters', () => {
-    const result = formatProgressLine('Short', 50);
-    assert.ok(result.startsWith('Short'));
+  test('returns code span for empty bar', () => {
+    const result = formatProgressLine('Test', 0);
+    assert.strictEqual(result, '`░░░░░░░░░░░░`');
+  });
+
+  test('returns code span for full bar', () => {
+    const result = formatProgressLine('Test', 100);
+    assert.strictEqual(result, '`████████████`');
+  });
+
+  test('wraps createProgressBar output in backticks', () => {
+    const bar = createProgressBar(50);
+    const line = formatProgressLine('Any', 50);
+    assert.strictEqual(line, '`' + bar + '`');
   });
 });

@@ -1,109 +1,50 @@
 /**
- * JSON Parse Error Handling Tests
- * Tests for invalid JSON responses and malformed content
- * Following TDD methodology with AAA pattern
+ * JSON Parse Error Handling Tests (v1.7.0 Markdown format)
  */
 
-import { describe, it } from 'node:test';
-import * as assert from 'node:assert';
-import { BOX_WIDTH } from '../../src/utils/box-constants.js';
+import { describe, it } from 'node:test'
+import * as assert from 'node:assert'
+import { formatParseError } from '../../src/api/client.js'
 
-// Import the parse error formatting function (will be created in client.ts)
-import { formatParseError } from '../../src/api/client.js';
+describe('formatParseError', () => {
+  it('formats parse error with Markdown header', () => {
+    const err = formatParseError('This is not JSON', 'tok')
+    assert.ok(err.message.includes('### ⚠️ Unexpected Response'))
+    assert.ok(err.message.includes('Invalid JSON'))
+  })
 
-describe('JSON Parse Error Handling', () => {
-  describe('formatParseError', () => {
-    it('should format parse error with boxed message', () => {
-      // Arrange
-      const responseBody = 'This is not JSON';
-      const authToken = 'test-token';
+  it('includes fix steps', () => {
+    const err = formatParseError('bad data', 'tok')
+    assert.ok(err.message.includes('**How to fix:**'))
+  })
 
-      // Act
-      const formatted = formatParseError(responseBody, authToken);
+  it('includes details when body is present', () => {
+    const err = formatParseError('Some malformed data', 'tok')
+    assert.ok(err.message.includes('Some malformed data'))
+  })
 
-      // Assert
-      assert.ok(formatted.message.includes('Invalid JSON'), 'Should mention invalid JSON');
-      assert.ok(formatted.message.includes('╔'), 'Should have top border');
-      assert.ok(formatted.message.includes('║'), 'Should have side borders');
-      assert.ok(formatted.message.includes('╚'), 'Should have bottom border');
-    });
+  it('sanitizes token from response body', () => {
+    const secret = 'sk-parse-secret'
+    const err = formatParseError(`Invalid JSON with ${secret} exposed`, secret)
+    assert.ok(!err.message.includes(secret))
+    assert.ok(err.message.includes('***'))
+  })
 
-    it('should create 60-character wide boxed error', () => {
-      // Arrange
-      const responseBody = '<html>Not JSON</html>';
-      const authToken = 'test-token';
+  it('truncates very long response bodies', () => {
+    const longBody = 'X'.repeat(500) + ' not JSON'
+    const err = formatParseError(longBody, 'tok')
+    assert.ok(err.message.includes('Invalid JSON'))
+    assert.ok(!err.message.includes('X'.repeat(300)))
+  })
 
-      // Act
-      const formatted = formatParseError(responseBody, authToken);
+  it('handles empty response body', () => {
+    const err = formatParseError('', 'tok')
+    assert.ok(err.message.includes('Invalid JSON'))
+    assert.ok(err.message.includes('malformed data'))
+  })
 
-      // Assert
-      const lines = formatted.message.split('\n');
-      assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL, 'Top border should be 60 chars');
-      assert.strictEqual(lines[lines.length - 1].length, BOX_WIDTH.TOTAL, 'Bottom border should be 60 chars');
-      
-      // All lines should be exactly 60 characters
-      for (const line of lines) {
-        assert.strictEqual(line.length, BOX_WIDTH.TOTAL, 'All lines should be 60 chars');
-      }
-    });
-
-    it('should sanitize token from parse error response body', () => {
-      // Arrange
-      const authToken = 'sk-secret-parse-123';
-      const responseBody = `Invalid JSON with token ${authToken} exposed`;
-
-      // Act
-      const formatted = formatParseError(responseBody, authToken);
-
-      // Assert
-      assert.ok(!formatted.message.includes(authToken), 'Should not contain raw token');
-      assert.ok(formatted.message.includes('***'), 'Should contain sanitization marker');
-    });
-
-    it('should truncate very long invalid response bodies', () => {
-      // Arrange
-      const longResponse = 'A'.repeat(500) + ' not JSON';
-      const authToken = 'test-token';
-
-      // Act
-      const formatted = formatParseError(longResponse, authToken);
-
-      // Assert
-      const lines = formatted.message.split('\n');
-      
-      // All lines should be exactly 60 characters
-      for (const line of lines) {
-        assert.strictEqual(line.length, BOX_WIDTH.TOTAL, 'All lines should be 60 chars');
-      }
-      
-      // Should mention invalid JSON
-      assert.ok(formatted.message.includes('Invalid JSON'), 'Should mention invalid JSON');
-    });
-
-    it('should handle empty response body', () => {
-      // Arrange
-      const responseBody = '';
-      const authToken = 'test-token';
-
-      // Act
-      const formatted = formatParseError(responseBody, authToken);
-
-      // Assert
-      assert.ok(formatted.message.includes('Invalid JSON'), 'Should mention invalid JSON');
-      assert.ok(formatted.message.includes('╔'), 'Should be boxed');
-    });
-
-    it('should handle malformed JSON with syntax errors', () => {
-      // Arrange
-      const responseBody = '{"incomplete": "json"';
-      const authToken = 'test-token';
-
-      // Act
-      const formatted = formatParseError(responseBody, authToken);
-
-      // Assert
-      assert.ok(formatted.message.includes('Invalid JSON'), 'Should mention invalid JSON');
-      assert.ok(formatted.message.includes('╔'), 'Should be boxed');
-    });
-  });
-});
+  it('handles malformed JSON', () => {
+    const err = formatParseError('{"broken": "json"', 'tok')
+    assert.ok(err.message.includes('Invalid JSON'))
+  })
+})

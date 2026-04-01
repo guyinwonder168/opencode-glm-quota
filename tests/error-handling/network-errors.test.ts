@@ -1,122 +1,69 @@
 /**
- * Network Error Handling Tests
+ * Network Error Handling Tests (v1.7.0 Markdown format)
  * Tests for network-related errors (timeout, connection refused, etc.)
- * Following TDD methodology with AAA pattern
  */
 
-import { describe, it } from 'node:test';
-import * as assert from 'node:assert';
-import { formatNetworkError, createBoxedError } from '../../src/api/client.js';
-import { BOX_WIDTH } from '../../src/utils/box-constants.js';
+import { describe, it } from 'node:test'
+import * as assert from 'node:assert'
+import { formatNetworkError, createMarkdownError } from '../../src/api/client.js'
 
-/**
- * Network error with code property
- */
 interface NetworkError extends Error {
-  code?: string;
+  code?: string
 }
 
 describe('Network Error Handling', () => {
   describe('formatNetworkError', () => {
-    it('should format ETIMEDOUT error with boxed message', () => {
-      // Arrange
-      const mockError = Object.assign(new Error('Request timeout'), {
-        code: 'ETIMEDOUT'
-      });
-      const authToken = 'test-token';
+    it('formats ETIMEDOUT with Markdown error', () => {
+      const err = Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' })
+      const result = formatNetworkError(err, 'tok')
+      assert.ok(result.message.includes('### ⚠️ Request Failed'))
+      assert.ok(result.message.includes('timeout'))
+      assert.strictEqual((result as NetworkError).code, 'ETIMEDOUT')
+    })
 
-      // Act
-      const formatted = formatNetworkError(mockError, authToken);
+    it('includes fix steps for ETIMEDOUT', () => {
+      const err = Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' })
+      const result = formatNetworkError(err, 'tok')
+      assert.ok(result.message.includes('**How to fix:**'))
+    })
 
-      // Assert
-      assert.ok(formatted.message.includes('Request timed out'));
-      assert.strictEqual((formatted as NetworkError).code, 'ETIMEDOUT');
-    });
+    it('formats ECONNREFUSED with Markdown error', () => {
+      const err = Object.assign(new Error('refused'), { code: 'ECONNREFUSED' })
+      const result = formatNetworkError(err, 'tok')
+      assert.ok(result.message.includes('### ⚠️ Request Failed'))
+      assert.ok(result.message.includes('Unable to connect'))
+      assert.strictEqual((result as NetworkError).code, 'ECONNREFUSED')
+    })
 
-    it('should format ECONNREFUSED error with boxed message', () => {
-      // Arrange
-      const mockError = Object.assign(new Error('Connection refused'), {
-        code: 'ECONNREFUSED'
-      });
-      const authToken = 'test-token';
+    it('sanitizes token for other error types', () => {
+      const secret = 'sk-net-secret'
+      const err = Object.assign(new Error(`Error with ${secret}`), { code: 'ENOTFOUND' })
+      const result = formatNetworkError(err, secret)
+      assert.ok(!result.message.includes(secret))
+      assert.ok(result.message.includes('***'))
+    })
 
-      // Act
-      const formatted = formatNetworkError(mockError, authToken);
+    it('preserves error code', () => {
+      const err = Object.assign(new Error('test'), { code: 'ETIMEDOUT' })
+      const result = formatNetworkError(err, 'tok')
+      assert.strictEqual((result as NetworkError).code, 'ETIMEDOUT')
+    })
+  })
 
-      // Assert
-      assert.ok(formatted.message.includes('Unable to connect to server'));
-      assert.strictEqual((formatted as NetworkError).code, 'ECONNREFUSED');
-    });
+  describe('createMarkdownError', () => {
+    it('creates Markdown error with title', () => {
+      const result = createMarkdownError('Test Error', {}, 'Something went wrong.')
+      assert.ok(result.includes('### ⚠️ Test Error'))
+      assert.ok(result.includes('Something went wrong.'))
+    })
 
-    it('should sanitize token for other error types', () => {
-      // Arrange
-      const authToken = 'sk-secret-123';
-      const mockError = Object.assign(new Error(`Error with token ${authToken}`), {
-        code: 'ENOTFOUND'
-      });
-
-      // Act
-      const formatted = formatNetworkError(mockError, authToken);
-
-      // Assert
-      assert.ok(!formatted.message.includes(authToken));
-      assert.ok(formatted.message.includes('***'));
-    });
-
-    it('should preserve error code in formatted errors', () => {
-      // Arrange
-      const mockError = Object.assign(new Error('Some error'), {
-        code: 'ETIMEDOUT'
-      });
-
-      // Act
-      const formatted = formatNetworkError(mockError, 'token');
-
-      // Assert
-      assert.strictEqual((formatted as NetworkError).code, 'ETIMEDOUT');
-    });
-  });
-
-  describe('createBoxedError', () => {
-    it('should create boxed error with 60-character width', () => {
-      // Arrange
-      const message = 'Request timed out. Please try again.';
-
-      // Act
-      const boxed = createBoxedError(message);
-
-      // Assert
-      const lines = boxed.split('\n');
-      assert.strictEqual(lines[0].length, BOX_WIDTH.TOTAL); // Top border
-      assert.strictEqual(lines[lines.length - 1].length, BOX_WIDTH.TOTAL); // Bottom border
-    });
-
-    it('should include box drawing characters', () => {
-      // Arrange
-      const message = 'Test message';
-
-      // Act
-      const boxed = createBoxedError(message);
-
-      // Assert
-      assert.ok(boxed.includes('╔'));
-      assert.ok(boxed.includes('║'));
-      assert.ok(boxed.includes('╚'));
-    });
-
-    it('should wrap long messages across multiple lines', () => {
-      // Arrange
-      const message = 'This is a very long error message that should wrap across multiple lines in the boxed format';
-
-      // Act
-      const boxed = createBoxedError(message);
-
-      // Assert
-      const lines = boxed.split('\n');
-      assert.ok(lines.length > 3); // Top + content lines + bottom
-      lines.forEach(line => {
-        assert.strictEqual(line.length, BOX_WIDTH.TOTAL);
-      });
-    });
-  });
-});
+    it('creates Markdown error with metadata and steps', () => {
+      const result = createMarkdownError(
+        'Error', { Status: '500' }, 'Server failed.', ['Try again']
+      )
+      assert.ok(result.includes('- **Status**: 500'))
+      assert.ok(result.includes('**How to fix:**'))
+      assert.ok(result.includes('1. Try again'))
+    })
+  })
+})

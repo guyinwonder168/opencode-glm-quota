@@ -16,9 +16,12 @@ import { getEndpoints } from "./api/endpoints.js";
 import { queryEndpoint } from "./api/client.js";
 import { getTimeWindow, getTimeWindowQueryParams } from "./utils/time-window.js";
 import { formatProgressLine } from "./utils/progress-bar.js";
-import { formatTimeUntilReset } from "./utils/reset-timer.js";
-import { BOX_WIDTH, HEADER } from "./utils/box-constants.js";
-import { createBoxedError } from "./utils/error-formatter.js";
+import {
+  MAIN_TITLE_PREFIX,
+  ROW_EMOJI,
+  SECTION_HEADERS
+} from "./utils/markdown-constants.js";
+import { createMarkdownError } from "./utils/error-formatter.js";
 import {
   FIVE_HOUR_TOKEN_LIMIT_LABEL,
   getTokenLimitLabel,
@@ -159,37 +162,19 @@ async function getCredentials(): Promise<Credentials | null> {
 
 /**
  * Create error message for missing credentials
- * @returns Error message with setup instructions (box formatted)
+ * @returns Error message with setup instructions (Markdown formatted)
  */
 function createCredentialError(): string {
-  const header = '❌ Z.ai Credentials Not Found';
-  const instructions = [
-    '',
-    'Please authenticate first:',
-    '',
-    '1. Run /connect command in OpenCode TUI',
-    '2. Select "Z.AI Coding Plan" or "Z.AI"',
-    '3. Or "Zhipu" (for China region)',
-    '',
-    'For dev/testing, set environment:',
-    '- ZAI_API_KEY (global)',
-    '- ZHIPU_API_KEY (China)',
-    ''
-  ];
-
-  const lines: string[] = [];
-  lines.push('╔' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╗');
-  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
-  lines.push(formatBoxLine(header, BOX_WIDTH.CONTENT));
-  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
-  
-  for (const instruction of instructions) {
-    lines.push(formatBoxLine(instruction, BOX_WIDTH.CONTENT));
-  }
-  
-  lines.push('╚' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╝');
-  
-  return lines.join('\n');
+  return createMarkdownError(
+    'Credentials Not Found',
+    {},
+    'Please authenticate first.',
+    [
+      'Run `/connect` command in OpenCode TUI.',
+      'Select "Z.AI Coding Plan", "Z.AI", or "Zhipu".',
+      'For development/testing, set `ZAI_API_KEY` or `ZHIPU_API_KEY`.'
+    ]
+  );
 }
 
 // ============================================================================
@@ -283,355 +268,191 @@ function getTokenLimitInfo(quotaData: ProcessedQuotaLimit | null): { tokenLimit:
 /**
  * Format MCP tool details as readable lines
  */
-function formatMcpToolLines(details: Array<{modelCode: string; usage: number}>): string[] {
-  const lines: string[] = [];
-  const mcpTotal = details.reduce((sum, d) => sum + (d.usage || 0), 0);
-  for (const d of details) {
-    const pct = mcpTotal > 0 ? Math.round((d.usage / mcpTotal) * 100) : 0;
-    lines.push(`    - ${d.modelCode}: ${d.usage} (${pct}%)`);
-  }
-  return lines;
+function asNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function formatTokenUsageLines(tokens: number, tokenLimit: number, tokenPct: number): string[] {
-  const pct24h = Math.round((tokens / tokenLimit) * 100);
-  return [
-    `  Total Tokens (24h): ${formatNumber(tokens)} (${pct24h}% of 5h limit)`,
-    `  5h Window Usage: ${tokenPct}% of ${formatNumber(tokenLimit)}`
-  ];
-}
-
-function formatModelUsageLines(totalUsage: Record<string, unknown>, quotaData: ProcessedQuotaLimit | null): string[] {
-  const lines: string[] = [];
-  const { tokenLimit, tokenPct } = getTokenLimitInfo(quotaData);
-  const calls = totalUsage.totalModelCallCount as number | undefined;
-  const tokens = totalUsage.totalTokensUsage as number | undefined;
-
-  if (tokens !== undefined) {
-    lines.push(...formatTokenUsageLines(tokens, tokenLimit, tokenPct));
+function formatPlanLevel(level?: string): string {
+  if (!level) {
+    return '';
   }
 
-  if (calls !== undefined) {
-    lines.push(`  Total Calls: ${formatNumber(calls)}`);
-  }
-
-  return lines;
+  return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
 }
 
-/**
- * Format model usage data as readable lines
- */
-function formatModelUsage(
-  data: Record<string, unknown>,
-  quotaData: ProcessedQuotaLimit | null
-): string[] {
-  const lines: string[] = [];
-  const totalUsage = data.totalUsage as Record<string, unknown> | undefined;
-
-  if (!totalUsage) {
-    lines.push('  No usage data');
-    return lines;
+function formatResetCell(resetTime?: number): string {
+  const resetAt = asNumber(resetTime);
+  if (resetAt === null) {
+    return '—';
   }
 
-  return formatModelUsageLines(totalUsage, quotaData);
+  const diffMs = resetAt - Date.now();
+  if (diffMs <= 0) {
+    return '—';
+  }
+
+  const totalMinutes = Math.floor(diffMs / (1000 * 60));
+  if (totalMinutes >= 24 * 60) {
+    const totalHours = Math.floor(totalMinutes / 60);
+    return `${Math.floor(totalHours / 24)}d ${totalHours % 24}h`;
+  }
+
+  return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
 }
 
-/**
- * Format tool usage data as readable lines
- */
-function formatToolUsageSummaryLines(totalUsage: Record<string, unknown> | undefined): string[] {
-  if (!totalUsage) return [];
+function formatMarkdownTable(headers: string[], separator: string[], rows: string[][]): string {
+  const tableRows = rows.map((row) => `| ${row.join(' | ')} |`);
+  return [`| ${headers.join(' | ')} |`, `|${separator.join('|')}|`, ...tableRows].join('\n');
+}
 
-  const search = totalUsage.totalNetworkSearchCount as number | undefined;
-  const webRead = totalUsage.totalWebReadMcpCount as number | undefined;
-  const zread = totalUsage.totalZreadMcpCount as number | undefined;
+function formatMarkdownHeader(
+  platformName: string,
+  startTime: string,
+  endTime: string,
+  level?: string
+): string {
+  const title = level
+    ? `${MAIN_TITLE_PREFIX}${formatPlanLevel(level)}`
+    : '### 📊 Z.ai GLM Coding Plan';
 
   return [
-    ...(search !== undefined ? [`  Network Searches: ${formatNumber(search)}`] : []),
-    ...(webRead !== undefined ? [`  Web Reads: ${formatNumber(webRead)}`] : []),
-    ...(zread !== undefined ? [`  ZRead Calls: ${formatNumber(zread)}`] : [])
-  ];
+    title,
+    '',
+    `- **Platform**: ${platformName}`,
+    `- **Period**: ${startTime} → ${endTime}`
+  ].join('\n');
 }
 
-function formatMcpUsageDetailLines(quotaData: ProcessedQuotaLimit | null): string[] {
-  if (!quotaData?.limits) return [];
-
-  for (const limit of quotaData.limits) {
-    if (limit.type === MCP_LIMIT_LABEL && limit.usageDetails) {
-      const details = limit.usageDetails as unknown as Array<{modelCode: string; usage: number}>;
-      return ['  MCP Tool Details:', ...formatMcpToolLines(details)];
-    }
+function formatQuotaWindowLabel(type: string): string {
+  if (type === FIVE_HOUR_TOKEN_LIMIT_LABEL) {
+    return `${ROW_EMOJI.TOKEN} 5h Token`;
   }
 
-  return [];
-}
-
-function formatToolUsage(
-  data: Record<string, unknown>,
-  quotaData: ProcessedQuotaLimit | null
-): string[] {
-  const totalUsage = data.totalUsage as Record<string, unknown> | undefined;
-  const lines = [
-    ...formatToolUsageSummaryLines(totalUsage),
-    ...formatMcpUsageDetailLines(quotaData)
-  ];
-
-  if (lines.length === 0) {
-    return ['  No usage data'];
+  if (type === 'Token usage(Weekly)') {
+    return `${ROW_EMOJI.WEEKLY} Weekly`;
   }
 
-  return lines;
-}
-
-// ============================================================================
-// HELPER FUNCTIONS FOR OUTPUT FORMATTING
-// ============================================================================
-
-/**
- * Format a single line with box characters
- * @param content - Content to display (without padding)
- * @param lineIndent - Total line width after padding
- * @returns Formatted line with box characters
- */
-function formatBoxLine(content: string, lineIndent: number): string {
-  const trimmed = trimToDisplayWidth(content, lineIndent, 0);
-  const padding = Math.max(lineIndent - getDisplayWidth(trimmed), 0);
-  return '║  ' + trimmed + ' '.repeat(padding) + '║';
-}
-
-function formatProgressBoxLine(content: string, lineIndent: number): string {
-  const gap = 2;
-  const contentWidth = Math.max(lineIndent - gap, 0);
-  const trimmed = trimToDisplayWidth(content, contentWidth, 0);
-  const padding = Math.max(contentWidth - getDisplayWidth(trimmed), 0);
-  return '║  ' + trimmed + ' '.repeat(padding + gap) + '║';
-}
-
-function getDisplayWidth(text: string): number {
-  let width = 0;
-
-  for (let i = 0; i < text.length; i += 1) {
-    const codePoint = text.codePointAt(i);
-    if (codePoint === undefined) {
-      continue;
-    }
-
-    if (codePoint > 0xffff) {
-      i += 1;
-    }
-
-    if (isControlCodePoint(codePoint) || isZeroWidthCodePoint(codePoint)) {
-      continue;
-    }
-
-    width += isEmojiCodePoint(codePoint) || isFullWidthCodePoint(codePoint) ? 2 : 1;
+  if (type === MCP_LIMIT_LABEL) {
+    return `${ROW_EMOJI.MCP} MCP (1 Month)`;
   }
 
-  return width;
+  return type;
 }
 
-function trimToDisplayWidth(text: string, maxWidth: number, reserveRightPadding: number): string {
-  let width = 0;
-  let result = '';
-  const allowedWidth = Math.max(maxWidth - reserveRightPadding, 0);
+function formatQuotaLimitsTable(quotaData: ProcessedQuotaLimit | null): string {
+  const rows = quotaData?.limits?.length
+    ? quotaData.limits.map((limit) => {
+      const percentage = typeof limit.percentage === 'number' ? limit.percentage : 0;
+      return [
+        formatQuotaWindowLabel(limit.type || 'Unknown'),
+        `${percentage.toFixed(1)}%`,
+        formatProgressLine(limit.type || 'Unknown', percentage),
+        limit.type === MCP_LIMIT_LABEL ? '—' : formatResetCell(limit.nextResetTime)
+      ];
+    })
+    : [['No quota data available', '—', '—', '—']];
 
-  for (let i = 0; i < text.length; i += 1) {
-    const codePoint = text.codePointAt(i);
-    if (codePoint === undefined) {
-      continue;
-    }
-
-    if (codePoint > 0xffff) {
-      i += 1;
-    }
-
-    if (isControlCodePoint(codePoint) || isZeroWidthCodePoint(codePoint)) {
-      continue;
-    }
-
-    const charWidth = isEmojiCodePoint(codePoint) || isFullWidthCodePoint(codePoint) ? 2 : 1;
-    if (width + charWidth > allowedWidth) {
-      break;
-    }
-
-    result += String.fromCodePoint(codePoint);
-    width += charWidth;
-  }
-
-  return result;
-}
-
-function isControlCodePoint(codePoint: number): boolean {
-  return codePoint <= 0x1f || (codePoint >= 0x7f && codePoint <= 0x9f);
-}
-
-function isZeroWidthCodePoint(codePoint: number): boolean {
-  return (
-    codePoint === 0x200d ||
-    codePoint === 0xfe0f ||
-    (codePoint >= 0xfe00 && codePoint <= 0xfe0f)
+  return formatMarkdownTable(
+    ['Window', 'Usage', 'Progress', 'Resets In'],
+    ['--------', '------:', '----------', '-----------'],
+    rows
   );
 }
 
-function isEmojiCodePoint(codePoint: number): boolean {
-  return (
-    (codePoint >= 0x1f300 && codePoint <= 0x1f5ff) ||
-    (codePoint >= 0x1f600 && codePoint <= 0x1f64f) ||
-    (codePoint >= 0x1f680 && codePoint <= 0x1f6ff) ||
-    (codePoint >= 0x1f700 && codePoint <= 0x1f77f) ||
-    (codePoint >= 0x1f780 && codePoint <= 0x1f7ff) ||
-    (codePoint >= 0x1f800 && codePoint <= 0x1f8ff) ||
-    (codePoint >= 0x1f900 && codePoint <= 0x1f9ff) ||
-    (codePoint >= 0x1fa00 && codePoint <= 0x1faff) ||
-    (codePoint >= 0x2600 && codePoint <= 0x26ff) ||
-    (codePoint >= 0x2700 && codePoint <= 0x27bf)
-  );
-}
-
-function isFullWidthCodePoint(codePoint: number): boolean {
-  return (
-    codePoint >= 0x1100 && (
-      codePoint <= 0x115f ||
-      codePoint === 0x2329 ||
-      codePoint === 0x232a ||
-      (codePoint >= 0x2e80 && codePoint <= 0x3247 && codePoint !== 0x303f) ||
-      (codePoint >= 0x3250 && codePoint <= 0x4dbf) ||
-      (codePoint >= 0x4e00 && codePoint <= 0xa4c6) ||
-      (codePoint >= 0xa960 && codePoint <= 0xa97c) ||
-      (codePoint >= 0xac00 && codePoint <= 0xd7a3) ||
-      (codePoint >= 0xf900 && codePoint <= 0xfaff) ||
-      (codePoint >= 0xfe10 && codePoint <= 0xfe19) ||
-      (codePoint >= 0xfe30 && codePoint <= 0xfe6b) ||
-      (codePoint >= 0xff01 && codePoint <= 0xff60) ||
-      (codePoint >= 0xffe0 && codePoint <= 0xffe6) ||
-      (codePoint >= 0x1b000 && codePoint <= 0x1b001) ||
-      (codePoint >= 0x1f200 && codePoint <= 0x1f251) ||
-      (codePoint >= 0x20000 && codePoint <= 0x3fffd)
-    )
-  );
-}
-
-/**
- * Format header section
- * @param platformName - Platform name
- * @param startTime - Start time string
- * @param endTime - End time string
- * @param level - Account level/tier (optional)
- * @returns Array of header lines
- */
-function formatHeader(platformName: string, startTime: string, endTime: string, level?: string): string[] {
-  const lines: string[] = [];
-
-  lines.push('╔' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╗');
-  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
-  lines.push('║' + ' Z.ai GLM Coding Plan Usage Statistics '.padStart(HEADER.TITLE_PAD_START).padEnd(BOX_WIDTH.BORDER_CHARS) + '║');
-  lines.push('║' + ' '.repeat(BOX_WIDTH.BORDER_CHARS) + '║');
-  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
-  lines.push(formatBoxLine(`Platform: ${platformName}`, BOX_WIDTH.CONTENT));
-  if (level) {
-    const capitalizedLevel = level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
-    lines.push(formatBoxLine(`Plan:     ${capitalizedLevel}`, BOX_WIDTH.CONTENT));
-  }
-  lines.push(formatBoxLine(`Period:   ${startTime} → ${endTime}`, BOX_WIDTH.CONTENT));
-  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
-
-  return lines;
-}
-
-/**
- * Format quota limits section
- * @param quotaData - Quota limit data
- * @returns Array of quota lines
- */
-function formatQuotaLimits(quotaData: ProcessedQuotaLimit | null): string[] {
-  const lines: string[] = [];
-
-  lines.push(formatBoxLine('QUOTA LIMITS', BOX_WIDTH.CONTENT));
-  lines.push('╟' + '─'.repeat(BOX_WIDTH.BORDER_CHARS) + '╢');
-
-  const limits = quotaData?.limits;
-  if (limits && Array.isArray(limits)) {
-    for (const limit of limits) {
-      const pct = typeof limit.percentage === 'number' ? limit.percentage : 0;
-      const line = formatProgressLine(limit.type || 'Unknown', pct);
-      lines.push(formatProgressBoxLine(line, BOX_WIDTH.CONTENT));
-
-      if (limit.nextResetTime !== undefined) {
-        const resetMsg = formatTimeUntilReset(limit.nextResetTime);
-        if (resetMsg) {
-          lines.push(formatBoxLine(resetMsg, BOX_WIDTH.CONTENT));
-        }
-      }
-
-      if (limit.currentValue !== undefined && limit.total !== undefined) {
-        const usageStr = '       Used: ' + limit.currentValue + '/' + limit.total;
-        lines.push(formatBoxLine(usageStr, BOX_WIDTH.CONTENT));
-      }
-    }
-  } else {
-    lines.push(formatBoxLine('No quota data available', BOX_WIDTH.CONTENT));
-  }
-
-  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
-
-  return lines;
-}
-
-/**
- * Format data section with optional data
- * @param title - Section title
- * @param data - Data object or null
- * @param formatter - Function to format data if present
- * @param noDataMessage - Message to show if no data
- * @param LINE_INDENT - Line indent width
- * @returns Array of section lines
- */
-function formatDataSection(
-  title: string,
-  data: Record<string, unknown> | null,
-  formatter: (data: Record<string, unknown>, quotaData: ProcessedQuotaLimit | null) => string[],
+function formatQuotaUsageTable(
   quotaData: ProcessedQuotaLimit | null,
-  noDataMessage: string,
-  LINE_INDENT: number
-): string[] {
-  const lines: string[] = [];
+  modelData: Record<string, unknown> | null
+): string {
+  const tokenCount = asNumber((modelData?.totalUsage as Record<string, unknown> | undefined)?.totalTokensUsage);
+  const { tokenLimit } = getTokenLimitInfo(quotaData);
+  const mcpLimit = quotaData?.limits?.find((limit) => limit.type === MCP_LIMIT_LABEL);
+  const mcpCurrent = asNumber(mcpLimit?.currentValue);
+  const mcpTotal = asNumber(mcpLimit?.total);
 
-  lines.push(formatBoxLine(title, LINE_INDENT));
-  lines.push('╟' + '─'.repeat(BOX_WIDTH.BORDER_CHARS) + '╢');
+  return formatMarkdownTable(
+    ['Metric', 'Value'],
+    ['--------', '------:'],
+    [
+      ['💰 **Token Used**', tokenCount === null ? '—' : `**${formatNumber(tokenCount)} / ${formatNumber(tokenLimit)}**`],
+      ['🔌 **MCP Used**', mcpCurrent === null || mcpTotal === null ? '—' : `**${mcpCurrent} / ${mcpTotal}**`]
+    ]
+  );
+}
 
-  if (data) {
-    const formattedLines = formatter(data, quotaData);
-    for (const line of formattedLines) {
-      lines.push(formatBoxLine(line, LINE_INDENT));
-    }
-  } else {
-    lines.push(formatBoxLine(noDataMessage, LINE_INDENT));
+function formatMcpToolLabel(modelCode: string): string {
+  if (modelCode === 'search-prime') {
+    return '🔍 Network Searches';
   }
 
-  lines.push('╠' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╣');
+  if (modelCode === 'web-reader') {
+    return '🌐 Web Reads';
+  }
 
-  return lines;
+  if (modelCode === 'zread') {
+    return '📖 ZRead Calls';
+  }
+
+  return modelCode;
 }
 
-/**
- * Format footer section
- * @returns Footer lines
- */
-function formatFooter(): string[] {
-  return ['╚' + '═'.repeat(BOX_WIDTH.BORDER_CHARS) + '╝'];
+function formatMcpBreakdownTable(quotaData: ProcessedQuotaLimit | null): string {
+  const mcpLimit = quotaData?.limits?.find((limit) => limit.type === MCP_LIMIT_LABEL);
+  const details = Array.isArray(mcpLimit?.usageDetails)
+    ? mcpLimit.usageDetails as Array<{ modelCode: string; usage: number }>
+    : [];
+  const rows = details.length
+    ? details.map((detail) => [formatMcpToolLabel(detail.modelCode), formatNumber(detail.usage)])
+    : [['No MCP data available', '—']];
+
+  return formatMarkdownTable(['Tool', 'Count'], ['------', '------:'], rows);
 }
 
-/**
- * Format usage statistics as ASCII table
- * @param platform - Platform name
- * @param startTime - Start time string
- * @param endTime - End time string
- * @param quotaData - Quota limit data
- * @param modelData - Model usage data
- * @param toolData - Tool usage data
- * @returns Formatted output string
- */
-function formatOutput(
+function formatModelUsageTable(
+  modelData: Record<string, unknown> | null,
+  quotaData: ProcessedQuotaLimit | null
+): string {
+  const totalUsage = modelData?.totalUsage as Record<string, unknown> | undefined;
+  const rows: string[][] = [];
+  const { tokenLimit, tokenPct } = getTokenLimitInfo(quotaData);
+  const calls = asNumber(totalUsage?.totalModelCallCount);
+  const tokens = asNumber(totalUsage?.totalTokensUsage);
+
+  if (tokens !== null) {
+    const pct24h = Math.round((tokens / tokenLimit) * 100);
+    rows.push(['🔢 Total Tokens', `${formatNumber(tokens)} (${pct24h}% of 5h limit)`]);
+    rows.push(['⏱️ 5h Window', `${tokenPct.toFixed(1)}% of ${formatNumber(tokenLimit)}`]);
+  }
+
+  if (calls !== null) {
+    rows.push(['📞 Total Calls', formatNumber(calls)]);
+  }
+
+  return formatMarkdownTable(
+    ['Metric', 'Value'],
+    ['--------', '------:'],
+    rows.length > 0 ? rows : [['No model usage data available', '—']]
+  );
+}
+
+function formatToolUsageTable(toolData: Record<string, unknown> | null): string {
+  const totalUsage = toolData?.totalUsage as Record<string, unknown> | undefined;
+  const counts: Array<[string, number | null]> = [
+    ['🔍 Network Searches', asNumber(totalUsage?.totalNetworkSearchCount)],
+    ['🌐 Web Reads', asNumber(totalUsage?.totalWebReadMcpCount)],
+    ['🎭 ZRead Calls', asNumber(totalUsage?.totalZreadMcpCount)]
+  ];
+  const rows = counts
+    .filter(([, count]) => count !== null)
+    .map(([label, count]) => [label, formatNumber(count as number)]);
+
+  return formatMarkdownTable(
+    ['Tool', 'Count'],
+    ['------', '------:'],
+    rows.length > 0 ? rows : [['No tool usage data available', '—']]
+  );
+}
+
+function formatMarkdownOutput(
   platform: Platform,
   startTime: string,
   endTime: string,
@@ -639,31 +460,17 @@ function formatOutput(
   modelData: Record<string, unknown> | null,
   toolData: Record<string, unknown> | null
 ): string {
-  const lines: string[] = [];
   const platformName = getPlatformName(platform);
   const level = quotaData?.level as string | undefined;
 
-  lines.push(...formatHeader(platformName, startTime, endTime, level));
-  lines.push(...formatQuotaLimits(quotaData));
-  lines.push(...formatDataSection(
-    'MODEL USAGE (24h)',
-    modelData,
-    formatModelUsage,
-    quotaData,
-    'No model usage data available',
-    BOX_WIDTH.CONTENT
-  ));
-  lines.push(...formatDataSection(
-    'TOOL/MCP USAGE (24h)',
-    toolData,
-    formatToolUsage,
-    quotaData,
-    'No tool usage data available',
-    BOX_WIDTH.CONTENT
-  ));
-  lines.push(...formatFooter());
-
-  return lines.join('\n');
+  return [
+    formatMarkdownHeader(platformName, startTime, endTime, level),
+    `${SECTION_HEADERS.QUOTA_LIMITS}\n\n${formatQuotaLimitsTable(quotaData)}`,
+    `${SECTION_HEADERS.QUOTA_USAGE}\n\n${formatQuotaUsageTable(quotaData, modelData)}`,
+    `${SECTION_HEADERS.MCP_BREAKDOWN}\n\n${formatMcpBreakdownTable(quotaData)}`,
+    `${SECTION_HEADERS.MODEL_USAGE}\n\n${formatModelUsageTable(modelData, quotaData)}`,
+    `${SECTION_HEADERS.TOOL_USAGE}\n\n${formatToolUsageTable(toolData)}`
+  ].join('\n\n');
 }
 
 // ============================================================================
@@ -701,7 +508,7 @@ async function queryAllUsage(credentials: Credentials): Promise<string> {
     ? (toolResponse.data || toolResponse) as Record<string, unknown> 
     : null;
   
-  return formatOutput(platform, startTime, endTime, quotaData, modelData, toolData);
+  return formatMarkdownOutput(platform, startTime, endTime, quotaData, modelData, toolData);
 }
 
 // ============================================================================
@@ -726,13 +533,11 @@ export const GlmQuotaPlugin: Plugin = async () => {
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
-            // If the error message is already boxed (starts with top border), return it as is
-            if (errorMessage.trim().startsWith('╔') && errorMessage.includes('╚')) {
+            if (errorMessage.trim().startsWith('### ⚠️ ')) {
               return errorMessage;
             }
 
-            // Otherwise, wrap the raw error in a box
-            return createBoxedError(errorMessage);
+            return createMarkdownError('Error', {}, errorMessage);
           }
         }
       })

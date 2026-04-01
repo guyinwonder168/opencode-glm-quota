@@ -1,165 +1,184 @@
-/**
- * Integration tests for reset time display
- * Test reset countdown functionality in output formatting
- */
+import { afterEach, beforeEach, describe, test } from 'node:test'
+import assert from 'node:assert'
+import { EventEmitter } from 'node:events'
+import type { RequestOptions } from 'node:https'
+import { createRequire, syncBuiltinESMExports } from 'node:module'
+import { GlmQuotaPlugin } from '../../src/index.js'
 
-import { describe, test } from 'node:test';
-import assert from 'node:assert';
+const require = createRequire(import.meta.url)
+const https = require('node:https') as typeof import('node:https')
 
-/**
- * Simulate processQuotaLimit function behavior with nextResetTime
- */
-function mockProcessQuotaLimitWithReset(data: Record<string, unknown>): Record<string, unknown> {
-  const result = { ...data };
+type PluginContext = Parameters<typeof GlmQuotaPlugin>[0]
+type ToolExecutor = {
+  execute: (args?: Record<string, unknown>, context?: Record<string, unknown>) => Promise<string> | string
+}
 
-  if (result.limits && Array.isArray(result.limits)) {
-    result.limits = result.limits.map((item: unknown) => {
-      if (typeof item === 'object' && item !== null) {
-        const limit = item as Record<string, unknown>;
+type MockResponse = {
+  statusCode: number
+  body: Record<string, unknown>
+}
 
-        if (limit.type === 'TOKENS_LIMIT') {
-          return {
-            type: 'Token usage(5 Hour)',
-            percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
-            nextResetTime: limit.nextResetTime as number | undefined
-          };
-        }
+type MockRequest = EventEmitter & {
+  destroy: () => void
+  end: () => void
+  setTimeout: (_timeout: number) => MockRequest
+}
 
-        if (limit.type === 'TIME_LIMIT') {
-          return {
-            type: 'MCP usage(1 Month)',
-            percentage: typeof limit.percentage === 'number' ? limit.percentage : 0,
-            currentValue: limit.currentValue,
-            total: limit.usage,
-            usageDetails: limit.usageDetails as Record<string, unknown> | undefined
-          };
-        }
-      }
-      return item;
-    });
+function createMockRequest(responses: Record<string, MockResponse>) {
+  return (
+    options: RequestOptions,
+    callback: (response: EventEmitter & { statusCode?: number }) => void
+  ): MockRequest => {
+    const request = new EventEmitter() as MockRequest
+    const requestPath = options.path ?? ''
+    const matchedKey = Object.keys(responses).find((key) => requestPath.includes(key))
+    const mockResponse = matchedKey ? responses[matchedKey] : { statusCode: 404, body: { error: 'not found' } }
+
+    request.destroy = () => {}
+    request.setTimeout = () => request
+    request.end = () => {
+      queueMicrotask(() => {
+        const response = new EventEmitter() as EventEmitter & { statusCode?: number }
+        response.statusCode = mockResponse.statusCode
+        callback(response)
+
+        queueMicrotask(() => {
+          response.emit('data', JSON.stringify(mockResponse.body))
+          response.emit('end')
+        })
+      })
+    }
+
+    return request
   }
-
-  return result;
 }
 
 describe('Reset Time Display Integration', () => {
-  /**
-   * Test: Quota limit processing preserves nextResetTime
-   */
-  test('preserves nextResetTime in processed quota data', () => {
-    const resetTime = Date.now() + (4 * 60 * 60 * 1000); // 4 hours from now
-    const apiResponse = {
-      limits: [
-        {
-          type: 'TOKENS_LIMIT',
-          percentage: 45,
-          unit: 3,
-          number: 5,
-          nextResetTime: resetTime
+  const fixedNow = 1737763200000
+  const originalNow = Date.now
+  const originalRequest = https.request
+
+  beforeEach(() => {
+    Date.now = () => fixedNow
+    process.env.ZAI_API_KEY = 'test-token'
+  })
+
+  afterEach(() => {
+    Date.now = originalNow
+    https.request = originalRequest
+    syncBuiltinESMExports()
+    delete process.env.ZAI_API_KEY
+  })
+
+  test('renders short reset windows as h and m in the Markdown quota table', async () => {
+    https.request = createMockRequest({
+      '/quota/limit': {
+        statusCode: 200,
+        body: {
+          data: {
+            level: 'pro',
+            limits: [
+              {
+                type: 'TOKENS_LIMIT',
+                unit: 3,
+                number: 5,
+                percentage: 45,
+                nextResetTime: fixedNow + (4 * 60 * 60 * 1000) + (42 * 60 * 1000)
+              }
+            ]
+          }
         }
-      ]
-    };
+      },
+      '/model-usage': {
+        statusCode: 200,
+        body: { data: { totalUsage: { totalModelCallCount: 12, totalTokensUsage: 1000 } } }
+      },
+      '/tool-usage': {
+        statusCode: 200,
+        body: { data: { totalUsage: { totalNetworkSearchCount: 1, totalWebReadMcpCount: 2, totalZreadMcpCount: 3 } } }
+      }
+    }) as typeof https.request
+    syncBuiltinESMExports()
 
-    const processed = mockProcessQuotaLimitWithReset(apiResponse);
-    const limits = processed.limits as unknown[];
+    const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
+    const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
 
-    assert.ok(limits, 'Should have limits array');
-    assert.strictEqual(limits.length, 1, 'Should have 1 limit');
-    assert.strictEqual(
-      (limits[0] as Record<string, unknown>).nextResetTime,
-      resetTime,
-      'Should preserve nextResetTime'
-    );
-  });
+    assert.ok(result.includes('| ⏱️ 5h Token | 45.0% | `█████░░░░░░░` | 4h 42m |'))
+  })
 
-  /**
-   * Test: Quota limit processing handles missing nextResetTime
-   */
-  test('handles missing nextResetTime gracefully', () => {
-    const apiResponse = {
-      limits: [
-        {
-          type: 'TOKENS_LIMIT',
-          percentage: 45,
-          unit: 3,
-          number: 5
-          // NO nextResetTime field
+  test('renders long reset windows as days and hours in the Markdown quota table', async () => {
+    https.request = createMockRequest({
+      '/quota/limit': {
+        statusCode: 200,
+        body: {
+          data: {
+            level: 'pro',
+            limits: [
+              {
+                type: 'TOKENS_LIMIT',
+                unit: 6,
+                number: 1,
+                percentage: 52,
+                nextResetTime: fixedNow + (4 * 24 * 60 * 60 * 1000) + (12 * 60 * 60 * 1000)
+              }
+            ]
+          }
         }
-      ]
-    };
+      },
+      '/model-usage': {
+        statusCode: 200,
+        body: { data: { totalUsage: { totalModelCallCount: 12, totalTokensUsage: 1000 } } }
+      },
+      '/tool-usage': {
+        statusCode: 200,
+        body: { data: { totalUsage: { totalNetworkSearchCount: 1, totalWebReadMcpCount: 2, totalZreadMcpCount: 3 } } }
+      }
+    }) as typeof https.request
+    syncBuiltinESMExports()
 
-    const processed = mockProcessQuotaLimitWithReset(apiResponse);
-    const limits = processed.limits as unknown[];
+    const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
+    const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
 
-    assert.ok(limits, 'Should have limits array');
-    assert.strictEqual(limits.length, 1, 'Should have 1 limit');
-    assert.strictEqual(
-      (limits[0] as Record<string, unknown>).nextResetTime,
-      undefined,
-      'nextResetTime should be undefined when not provided'
-    );
-  });
+    assert.ok(result.includes('| 📅 Weekly | 52.0% | `██████░░░░░░` | 4d 12h |'))
+  })
 
-  /**
-   * Test: Reset countdown calculation works with processed data
-   */
-  test('reset countdown works with processed quota data', () => {
-    const resetTime = Date.now() + (2 * 60 * 60 * 1000) + (30 * 60 * 1000); // 2h 30m from now
-    const apiResponse = {
-      limits: [
-        {
-          type: 'TOKENS_LIMIT',
-          percentage: 75,
-          unit: 3,
-          number: 5,
-          nextResetTime: resetTime
+  test('renders MCP rows without a reset countdown in the Markdown quota table', async () => {
+    https.request = createMockRequest({
+      '/quota/limit': {
+        statusCode: 200,
+        body: {
+          data: {
+            level: 'pro',
+            limits: [
+              {
+                type: 'TIME_LIMIT',
+                percentage: 12.3,
+                currentValue: 123,
+                usage: 1000,
+                usageDetails: [
+                  { modelCode: 'search-prime', usage: 1 },
+                  { modelCode: 'web-reader', usage: 2 },
+                  { modelCode: 'zread', usage: 3 }
+                ]
+              }
+            ]
+          }
         }
-      ]
-    };
+      },
+      '/model-usage': {
+        statusCode: 200,
+        body: { data: { totalUsage: { totalModelCallCount: 12, totalTokensUsage: 1000 } } }
+      },
+      '/tool-usage': {
+        statusCode: 200,
+        body: { data: { totalUsage: { totalNetworkSearchCount: 1, totalWebReadMcpCount: 2, totalZreadMcpCount: 3 } } }
+      }
+    }) as typeof https.request
+    syncBuiltinESMExports()
 
-    const processed = mockProcessQuotaLimitWithReset(apiResponse);
-    const limit = processed.limits?.[0] as Record<string, unknown>;
+    const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
+    const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
 
-    assert.ok(limit, 'Should have limit data');
-    assert.strictEqual(limit.type, 'Token usage(5 Hour)', 'Should have correct type');
-    assert.strictEqual(limit.percentage, 75, 'Should preserve percentage');
-    assert.strictEqual(limit.nextResetTime, resetTime, 'Should preserve reset time');
-  });
-
-  /**
-   * Test: Multiple limits with mixed reset time availability
-   */
-  test('handles multiple limits with different reset time availability', () => {
-    const resetTime = Date.now() + (3 * 60 * 60 * 1000); // 3 hours from now
-    const apiResponse = {
-      limits: [
-        {
-          type: 'TOKENS_LIMIT',
-          percentage: 60,
-          unit: 3,
-          number: 5,
-          nextResetTime: resetTime
-        },
-        {
-          type: 'TIME_LIMIT',
-          percentage: 85,
-          currentValue: 85,
-          usage: 100
-          // NO nextResetTime for TIME_LIMIT
-        }
-      ]
-    };
-
-    const processed = mockProcessQuotaLimitWithReset(apiResponse);
-    const limits = processed.limits as unknown[];
-
-    assert.ok(limits, 'Should have limits array');
-    assert.strictEqual(limits.length, 2, 'Should have 2 limits');
-
-    const tokenLimit = limits[0] as Record<string, unknown>;
-    const timeLimit = limits[1] as Record<string, unknown>;
-
-    assert.strictEqual(tokenLimit.nextResetTime, resetTime, 'Token limit should have reset time');
-    assert.strictEqual(timeLimit.nextResetTime, undefined, 'Time limit should not have reset time');
-  });
-});
+    assert.ok(result.includes('| 🔌 MCP (1 Month) | 12.3% | `█░░░░░░░░░░░` | — |'))
+  })
+})
