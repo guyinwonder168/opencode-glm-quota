@@ -7,6 +7,24 @@ This is an OpenCode plugin project for querying Z.ai GLM Coding Plan usage stati
 
 This document provides build commands, code style guidelines, and conventions for agentic coding agents working on this OpenCode plugin repository.
 
+## Git Configuration (CRITICAL)
+
+**Before committing or pushing ANY changes**, verify the git author matches the repository owner:
+
+```bash
+# Check current author
+git config user.name  # MUST be "guyinwonder"
+git config user.email # MUST be "227569314+guyinwonder168@users.noreply.github.com"
+```
+
+If the author is wrong (e.g., `eddy.wijaya`), set it for this repo:
+```bash
+git config user.name "guyinwonder"
+git config user.email "227569314+guyinwonder168@users.noreply.github.com"
+```
+
+**Always verify** with `git log -1 --format='%an <%ae>'` before pushing.
+
 ## Build & Development Commands
 
 ```bash
