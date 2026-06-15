@@ -70,7 +70,7 @@ describe('Reset Time Display Integration', () => {
     delete process.env.ZAI_API_KEY
   })
 
-  test('renders short reset windows as h and m in the Markdown quota table', async () => {
+  test('renders short reset windows as countdown with local time in the Markdown quota table', async () => {
     https.request = createMockRequest({
       '/quota/limit': {
         statusCode: 200,
@@ -103,10 +103,11 @@ describe('Reset Time Display Integration', () => {
     const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
     const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
 
-    assert.ok(result.includes('| ⏱️ 5h Token | 45.0% | `█████░░░░░░░` | 4h 42m |'))
+    // Should show countdown + local time: "4h 42m (HH:MM)"
+    assert.match(result, /\| ⏱️ 5h Token \| 45\.0% \| `█████░░░░░░░` \| 4h 42m \(\d{2}:\d{2}\) \|/)
   })
 
-  test('renders long reset windows as days and hours in the Markdown quota table', async () => {
+  test('renders long reset windows as countdown with day and local time in the Markdown quota table', async () => {
     https.request = createMockRequest({
       '/quota/limit': {
         statusCode: 200,
@@ -139,7 +140,8 @@ describe('Reset Time Display Integration', () => {
     const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
     const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
 
-    assert.ok(result.includes('| 📅 Weekly | 52.0% | `██████░░░░░░` | 4d 12h |'))
+    // Should show countdown + day name + local time: "4d 12h (Day HH:MM)"
+    assert.match(result, /\| 📅 Weekly \| 52\.0% \| `██████░░░░░░` \| 4d 12h \([A-Z][a-z]{2} \d{2}:\d{2}\) \|/)
   })
 
   test('renders MCP rows without a reset countdown in the Markdown quota table', async () => {

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-06-15
+
+### Added
+- **Reset timestamp display in local timezone** - The "Resets In" column now shows the actual clock time alongside the countdown (Issue #34):
+  - Short durations: `4h 36m (01:34)` — countdown + local HH:MM
+  - Long durations (≥24h): `6d 16h (Sat 13:48)` — countdown + weekday + local HH:MM
+  - Uses native `Date` local time methods (`getHours()`, `getMinutes()`, `getDay()`) — no external dependencies, no unreliable timezone abbreviations
+
+### Changed
+- `formatResetCell()` in `src/index.ts` now appends local reset time after the countdown portion
+
+### Technical
+- Integration tests updated to use regex assertions (`assert.match`) for timezone-dependent output instead of exact string matching
+- 117 tests passing (0 new tests, 2 updated assertions)
+- Reported by @eagleii-dev (Pacific/Auckland, UTC+12)
+
 ## [1.7.0] - 2026-04-02
 
 ### Changed

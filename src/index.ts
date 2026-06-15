@@ -292,12 +292,27 @@ function formatResetCell(resetTime?: number): string {
   }
 
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
+
+  // Format countdown portion
+  let countdown: string;
   if (totalMinutes >= 24 * 60) {
     const totalHours = Math.floor(totalMinutes / 60);
-    return `${Math.floor(totalHours / 24)}d ${totalHours % 24}h`;
+    countdown = `${Math.floor(totalHours / 24)}d ${totalHours % 24}h`;
+  } else {
+    countdown = `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
   }
 
-  return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
+  // Format local reset time portion (Issue #34: show actual clock time)
+  const resetDate = new Date(resetAt);
+  const hh = String(resetDate.getHours()).padStart(2, '0');
+  const mm = String(resetDate.getMinutes()).padStart(2, '0');
+
+  if (totalMinutes >= 24 * 60) {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return `${countdown} (${dayNames[resetDate.getDay()]} ${hh}:${mm})`;
+  }
+
+  return `${countdown} (${hh}:${mm})`;
 }
 
 function formatMarkdownTable(headers: string[], separator: string[], rows: string[][]): string {

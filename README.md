@@ -20,7 +20,7 @@ OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time qu
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
 - 🔐 Automatic credential discovery via OpenCode authentication context
 - 📈 Visual progress bars for quota percentages rendered in Markdown code spans
-- ⏰ Reset countdown display - Shows when quota resets (hours/days)
+- ⏰ Reset countdown display - Shows when quota resets with local timezone clock time (hours/days + HH:MM)
 - 🏷️ Account plan display - Shows your subscription tier (Lite, Pro, etc.)
 - ⚡ Fail-fast error handling (no retry logic - user controls when to retry)
 
@@ -137,8 +137,8 @@ After authentication, simply run:
 
 | Window | Usage | Progress | Resets In |
 |--------|------:|----------|-----------|
-| ⏱️ 5h Token | 40.5% | `█████░░░░░░░` | 3h 42m |
-| 📅 Weekly | 52.0% | `██████░░░░░░` | 4d 12h |
+| ⏱️ 5h Token | 40.5% | `█████░░░░░░░` | 3h 42m (01:34) |
+| 📅 Weekly | 52.0% | `██████░░░░░░` | 4d 12h (Sat 13:48) |
 | 🔌 MCP (1 Month) | 12.3% | `█░░░░░░░░░░░` | — |
 
 ##### 📊 Quota Usage

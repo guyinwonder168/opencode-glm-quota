@@ -245,7 +245,23 @@ async function getCredentials(): Promise<Credentials | null> { }
 
 ### Development Principles
 
-**CRITICAL:** Implementation MUST follow these principles to avoid over-engineering and maintain simplicity.
+**CRITICAL:** Implementation MUST follow these principles to avoid over-engineering and maintain simplicity. Violating any of them is a blocking issue — stop and simplify before proceeding.
+
+**No Over-Thinking (Primary Rule):**
+- Do NOT deliberate extensively on simple tasks — act decisively
+- Do NOT speculate about future needs — solve the problem in front of you
+- Do NOT create design documents for single-function changes
+- Do NOT weigh alternatives for more than a few minutes — pick the simplest viable option and implement
+- If a senior engineer would say "just do it", then just do it
+- Over-thinking wastes time; over-engineering wastes code. Both are blockers.
+
+**KISS (Keep It Simple, Stupid):**
+- Simplest correct solution wins. Always.
+- Prefer plain functions over classes, factories, or patterns
+- Prefer constants over config objects
+- Prefer inline code over abstractions for single-use cases
+- If code needs a 5-line comment to explain WHY it exists, it's too complex
+- Fewer lines of code = fewer bugs = easier review
 
 **YAGNI (You Aren't Gonna Need It):**
 - Build only what's needed NOW, not what you might need LATER
@@ -337,6 +353,28 @@ function isApiResponse(data: unknown): data is ApiResponse {
 - Simple code is easier to debug
 - Simple code is easier to maintain
 - Flexible without requirements = complex for no reason
+
+**TDD (Test-Driven Development) — MANDATORY for all code changes:**
+
+Workflow (Red → Green → Refactor):
+1. **RED**: Write a failing test that describes the desired behavior BEFORE any implementation
+2. **GREEN**: Write the minimum code to make the test pass — nothing more
+3. **REFACTOR**: Improve code quality while keeping tests green
+
+Rules:
+- ❌ NEVER write implementation before tests
+- ❌ NEVER add code without a corresponding test
+- ✅ One test at a time — write, run, repeat
+- ✅ Tests define the spec; implementation satisfies it
+- ✅ If a bug is found, write a test that reproduces it FIRST, then fix
+- ✅ Commit only when all tests pass
+
+```bash
+# TDD cycle commands
+npm run test -- path/to/test.test.ts   # Run specific test (RED check)
+npm run test                            # Run all tests (GREEN verification)
+npm run build                           # Ensure compiles
+```
 
 **Reference:**
 - Implementation plan: `docs/implementation-plan.md` - Follows TDD with vertical slicing
