@@ -428,6 +428,47 @@ Your token was rejected by the API.
 
 ---
 
+### 1.12 Reset Timestamp Display in Local Timezone (COMPLETED - v1.8.0 ✅)
+
+**Problem Statement:**
+
+The reset timer only shows a **countdown** (`4h 36m`), but not the **actual reset timestamp**. For users in timezones far from UTC (e.g., UTC+12 Pacific/Auckland), the 5-hour rolling window reset often happens at an inconvenient local time (e.g., 1–2 AM), and it's not obvious *when* exactly the quota will reset (Issue #34).
+
+**Solution:**
+
+Show the actual reset time in the user's local timezone alongside the countdown:
+
+```
+| ⏱️ 5h Token | 87.0% | ████████████████░░░░░ | 4h 36m (01:34) |
+| 📅 Weekly    | 17.0% | ████░░░░░░░░░░░░░░░░ | 6d 16h (Sat 13:48) |
+```
+
+**Design Decisions:**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Timezone display format | `HH:MM` local clock time | Deterministic, user knows their own timezone |
+| Timezone abbreviation | Not included | Node.js `toLocaleTimeString` TZ abbreviations unreliable across platforms |
+| Long duration format | `Day HH:MM` | Matches issue's proposed format for weekly resets |
+| API | `Date.getHours()`, `getMinutes()`, `getDay()` | Native methods, no dependencies, follows existing `date-formatter.ts` pattern |
+
+**Implementation:**
+
+- `formatResetCell()` in `src/index.ts` computes local time from `nextResetTime` Unix timestamp
+- Short durations (`<24h`): Returns `${countdown} (${HH}:${MM})`
+- Long durations (`≥24h`): Returns `${countdown} (${DayName} ${HH}:${MM})`
+- MCP rows without `nextResetTime`: Unchanged (`—`)
+
+**Testing:**
+
+- Integration tests use regex assertions (`assert.match`) for timezone-dependent output
+- Pattern: `/\d{2}:\d{2}/` for short durations, `/[A-Z][a-z]{2} \d{2}:\d{2}/` for long durations
+- Works deterministically across CI environments (GitHub Actions defaults to UTC)
+
+**Status:** ✅ COMPLETED (2026-06-15) - v1.8.0, resolves Issue #34
+
+---
+
 ## 2. OpenCode Plugin Architecture
 
 ### 2.1 OpenCode Plugin System
