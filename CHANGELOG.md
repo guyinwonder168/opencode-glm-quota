@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+- **Windows credentials lookup resolves cross-platform auth path** - On Windows the plugin only checked `%LOCALAPPDATA%\opencode\auth.json`, but opencode stores `auth.json` at the XDG-compatible path `~/.local/share/opencode/auth.json` on ALL platforms (including Windows). The plugin now probes every candidate location (legacy LOCALAPPDATA first for back-compat, then the XDG path) and tries each one until valid credentials are found, so a stale or partial file at one location no longer masks valid credentials at another. Authenticated Windows users are no longer incorrectly reported as "Credentials Not Found" (Issues #39, #41).
+
 ## [1.8.0] - 2026-06-15
 
 ### Added

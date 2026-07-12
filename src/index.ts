@@ -8,13 +8,12 @@
 import { type Plugin } from "@opencode-ai/plugin";
 import { tool } from "@opencode-ai/plugin/tool";
 import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
 import type { Platform } from "./api/platforms.js";
 import { detectPlatform, getPlatformName } from "./api/platforms.js";
 import { getEndpoints } from "./api/endpoints.js";
 import { queryEndpoint } from "./api/client.js";
 import { getTimeWindow, getTimeWindowQueryParams } from "./utils/time-window.js";
+import { getAuthFilePathCandidates } from "./utils/auth-path.js";
 import { formatProgressLine } from "./utils/progress-bar.js";
 import {
   MAIN_TITLE_PREFIX,
@@ -86,21 +85,6 @@ interface ProcessedQuotaLimit {
 // ============================================================================
 
 /**
- * Get auth file path based on platform
- * @returns Path to auth.json file
- */
-function getAuthFilePath(): string {
-  if (process.platform === 'win32') {
-    return path.join(
-      process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'),
-      'opencode',
-      'auth.json'
-    );
-  }
-  return path.join(os.homedir(), '.local', 'share', 'opencode', 'auth.json');
-}
-
-/**
  * Extract API key from auth entry
  * @param entry - Auth entry (string or object)
  * @returns API key or null
@@ -121,13 +105,15 @@ function extractKeyFromEntry(entry: unknown): string | null {
  * @returns Credentials or null if not found
  */
 async function getCredentials(): Promise<Credentials | null> {
-  // Priority 1: OpenCode auth.json
-  const authPath = getAuthFilePath();
-  if (fs.existsSync(authPath)) {
+  // Priority 1: OpenCode auth.json — probe EVERY candidate path (legacy
+  // LOCALAPPDATA on Windows, then the cross-platform XDG path) so a stale or
+  // partial file at one location does not mask valid credentials at another.
+  for (const authPath of getAuthFilePathCandidates()) {
+    if (!fs.existsSync(authPath)) continue;
     try {
       const content = fs.readFileSync(authPath, 'utf-8');
       const authData = JSON.parse(content) as Record<string, unknown>;
-      
+
       for (const providerId of CANDIDATE_PROVIDER_IDS) {
         const entry = authData[providerId];
         if (entry) {
@@ -141,7 +127,7 @@ async function getCredentials(): Promise<Credentials | null> {
         }
       }
     } catch {
-      // Silent fail, try next method
+      // Silent fail, try next candidate / fallback method
     }
   }
 
