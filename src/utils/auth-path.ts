@@ -4,9 +4,11 @@
  *
  * OpenCode stores auth.json at the XDG-compatible path
  * `~/.local/share/opencode/auth.json` CROSS-PLATFORM (including Windows).
- * On Windows we additionally probe the legacy `%LOCALAPPDATA%\opencode\auth.json`
- * location first, then fall through to the XDG path. The XDG candidate MUST be
- * present on every platform or authenticated Windows users appear logged out
+ * On Windows the XDG path is the source of truth and is tried FIRST; the
+ * legacy `%LOCALAPPDATA%\opencode\auth.json` is only a fallback for old or
+ * workaround-created copies, so a stale legacy token can never mask the
+ * current XDG credentials. The XDG candidate MUST be present on every
+ * platform or authenticated Windows users appear logged out
  * (regression: issues #39 / #41).
  */
 
@@ -31,11 +33,13 @@ export interface AuthFilePathOptions {
  * Get ordered candidate paths for OpenCode's auth.json.
  *
  * On win32 returns two candidates in priority order:
- *   [0] legacy LOCALAPPDATA path: `<localAppData>/opencode/auth.json`
- *   [1] XDG path (always):        `<homedir>/.local/share/opencode/auth.json`
+ *   [0] XDG path (always):        `<homedir>/.local/share/opencode/auth.json`
+ *   [1] legacy LOCALAPPDATA path: `<localAppData>/opencode/auth.json`
  *
- * On every other platform returns the XDG path only. The XDG candidate is
- * ALWAYS present, including on win32 — this is the cross-platform fix.
+ * The XDG path is the real, current OpenCode auth location and is tried first
+ * so a stale legacy copy cannot shadow it. On every other platform the XDG
+ * path is returned alone. The XDG candidate is ALWAYS present, including on
+ * win32 — this is the cross-platform fix.
  *
  * @param opts - Optional overrides for homedir/platform/localAppData (testing).
  * @returns Ordered list of candidate auth.json paths.
@@ -52,7 +56,7 @@ export function getAuthFilePathCandidates(opts?: AuthFilePathOptions): string[] 
       process.env.LOCALAPPDATA ||
       path.join(homedir, 'AppData', 'Local');
     const legacyPath = path.join(localAppData, 'opencode', 'auth.json');
-    return [legacyPath, xdgPath];
+    return [xdgPath, legacyPath];
   }
 
   return [xdgPath];

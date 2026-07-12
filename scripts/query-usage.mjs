@@ -52,9 +52,11 @@ const ENDPOINTS = {
  *
  * OpenCode stores auth.json at the XDG-compatible path
  * ~/.local/share/opencode/auth.json CROSS-PLATFORM (including Windows).
- * On win32 the legacy %LOCALAPPDATA%\opencode\auth.json is probed first,
- * then the XDG path. The XDG candidate is always present on every platform
- * (regression: issues #39 / #41).
+ * On win32 the XDG path is the real, current OpenCode auth location and is
+ * tried first; the legacy %LOCALAPPDATA%\opencode\auth.json is only a fallback
+ * for old or workaround-created copies, so a stale legacy token cannot mask
+ * current XDG credentials. The XDG candidate is always present on every
+ * platform (regression: issues #39 / #41).
  *
  * @param {{ homedir?: string, platform?: NodeJS.Platform, localAppData?: string }} [opts] - Optional overrides (testing).
  * @returns {string[]} Ordered candidate auth.json paths.
@@ -71,7 +73,7 @@ function getAuthFilePathCandidates(opts) {
       process.env.LOCALAPPDATA ||
       path.join(homedir, 'AppData', 'Local');
     const legacyPath = path.join(localAppData, 'opencode', 'auth.json');
-    return [legacyPath, xdgPath];
+    return [xdgPath, legacyPath];
   }
 
   return [xdgPath];

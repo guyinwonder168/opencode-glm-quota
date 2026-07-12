@@ -24,7 +24,7 @@ function toPosix(p: string): string {
 }
 
 describe('getAuthFilePathCandidates', () => {
-  test('win32 returns exactly 2 candidates with legacy first and XDG second', () => {
+  test('win32 returns exactly 2 candidates with XDG first and legacy second', () => {
     const candidates = getAuthFilePathCandidates({
       homedir: 'C:\\users\\me',
       platform: 'win32',
@@ -33,12 +33,12 @@ describe('getAuthFilePathCandidates', () => {
 
     assert.strictEqual(candidates.length, 2);
     assert.ok(
-      toPosix(candidates[0]).endsWith('AppData/Local/opencode/auth.json'),
-      `legacy candidate [0] should end with AppData/Local/opencode/auth.json, got: ${candidates[0]}`
+      toPosix(candidates[0]).endsWith('.local/share/opencode/auth.json'),
+      `XDG candidate [0] should end with .local/share/opencode/auth.json, got: ${candidates[0]}`
     );
     assert.ok(
-      toPosix(candidates[1]).endsWith('.local/share/opencode/auth.json'),
-      `XDG candidate [1] should end with .local/share/opencode/auth.json, got: ${candidates[1]}`
+      toPosix(candidates[1]).endsWith('AppData/Local/opencode/auth.json'),
+      `legacy candidate [1] should end with AppData/Local/opencode/auth.json, got: ${candidates[1]}`
     );
   });
 
@@ -64,8 +64,8 @@ describe('getAuthFilePathCandidates', () => {
 
       assert.strictEqual(candidates.length, 2);
       assert.ok(
-        toPosix(candidates[0]).endsWith('AppData/Local/opencode/auth.json'),
-        `legacy fallback should end with AppData/Local/opencode/auth.json, got: ${candidates[0]}`
+        toPosix(candidates[1]).endsWith('AppData/Local/opencode/auth.json'),
+        `legacy fallback candidate [1] should end with AppData/Local/opencode/auth.json, got: ${candidates[1]}`
       );
     } finally {
       if (saved !== undefined) process.env.LOCALAPPDATA = saved;
@@ -112,13 +112,13 @@ describe('resolveAuthFilePath', () => {
     }
   });
 
-  test('returns candidates[0] (legacy) on win32 when NEITHER candidate exists', () => {
+  test('returns candidates[0] (XDG) on win32 when NEITHER candidate exists', () => {
     const tmp = mkdtempSync(path.join(tmpdir(), 'auth-path-none-win-'));
     try {
       const localAppData = path.join(tmp, 'AppData', 'Local');
       const resolved = resolveAuthFilePath({ homedir: tmp, platform: 'win32', localAppData });
-      const expectedLegacy = path.join(localAppData, 'opencode', 'auth.json');
-      assert.strictEqual(resolved, expectedLegacy);
+      const expectedXdg = path.join(tmp, '.local', 'share', 'opencode', 'auth.json');
+      assert.strictEqual(resolved, expectedXdg);
       assert.strictEqual(existsSync(resolved), false);
     } finally {
       rmSync(tmp, { recursive: true, force: true });
@@ -140,7 +140,7 @@ describe('resolveAuthFilePath', () => {
     }
   });
 
-  test('prefers legacy LOCALAPPDATA path on win32 when both candidates exist', () => {
+  test('prefers XDG path on win32 when both candidates exist (stale legacy must not shadow)', () => {
     const tmp = mkdtempSync(path.join(tmpdir(), 'auth-path-both-'));
     try {
       const localAppData = path.join(tmp, 'AppData', 'Local');
@@ -152,7 +152,7 @@ describe('resolveAuthFilePath', () => {
       writeFileSync(path.join(xdgDir, 'auth.json'), '{}');
 
       const resolved = resolveAuthFilePath({ homedir: tmp, platform: 'win32', localAppData });
-      assert.strictEqual(resolved, path.join(legacyDir, 'auth.json'));
+      assert.strictEqual(resolved, path.join(xdgDir, 'auth.json'));
     } finally {
       rmSync(tmp, { recursive: true, force: true });
     }
