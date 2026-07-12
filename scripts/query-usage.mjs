@@ -47,15 +47,34 @@ const ENDPOINTS = {
 // CREDENTIAL DISCOVERY
 // ============================================================================
 
-function getAuthFilePath() {
-  if (process.platform === 'win32') {
-    return path.join(
-      process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'),
-      'opencode',
-      'auth.json'
-    );
+/**
+ * Get ordered candidate paths for OpenCode's auth.json.
+ *
+ * OpenCode stores auth.json at the XDG-compatible path
+ * ~/.local/share/opencode/auth.json CROSS-PLATFORM (including Windows).
+ * On win32 the legacy %LOCALAPPDATA%\opencode\auth.json is probed first,
+ * then the XDG path. The XDG candidate is always present on every platform
+ * (regression: issues #39 / #41).
+ *
+ * @param {{ homedir?: string, platform?: NodeJS.Platform, localAppData?: string }} [opts] - Optional overrides (testing).
+ * @returns {string[]} Ordered candidate auth.json paths.
+ */
+function getAuthFilePathCandidates(opts) {
+  const homedir = opts?.homedir ?? os.homedir();
+  const platform = opts?.platform ?? process.platform;
+
+  const xdgPath = path.join(homedir, '.local', 'share', 'opencode', 'auth.json');
+
+  if (platform === 'win32') {
+    const localAppData =
+      opts?.localAppData ||
+      process.env.LOCALAPPDATA ||
+      path.join(homedir, 'AppData', 'Local');
+    const legacyPath = path.join(localAppData, 'opencode', 'auth.json');
+    return [legacyPath, xdgPath];
   }
-  return path.join(os.homedir(), '.local', 'share', 'opencode', 'auth.json');
+
+  return [xdgPath];
 }
 
 function extractKeyFromEntry(entry) {
@@ -84,13 +103,15 @@ function detectPlatform(providerId) {
 }
 
 function getCredentials() {
-  // Priority 1: OpenCode auth.json
-  const authPath = getAuthFilePath();
-  if (fs.existsSync(authPath)) {
+  // Priority 1: OpenCode auth.json — probe EVERY candidate path (legacy
+  // LOCALAPPDATA on Windows, then the cross-platform XDG path) so a stale or
+  // partial file at one location does not mask valid credentials at another.
+  for (const authPath of getAuthFilePathCandidates()) {
+    if (!fs.existsSync(authPath)) continue;
     try {
       const content = fs.readFileSync(authPath, 'utf-8');
       const authData = JSON.parse(content);
-      
+
       for (const providerId of CANDIDATE_PROVIDER_IDS) {
         const entry = authData[providerId];
         if (entry) {
@@ -104,7 +125,7 @@ function getCredentials() {
         }
       }
     } catch {
-      // Silent fail, try next method
+      // Silent fail, try next candidate / fallback method
     }
   }
 
