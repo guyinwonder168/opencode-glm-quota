@@ -217,6 +217,8 @@ The plugin discovers credentials in this order:
 1. **OpenCode authentication context** (managed by OpenCode) - PRIMARY
 2. **Environment variable** `ZAI_API_KEY` (Global) or `ZHIPU_API_KEY` (CN) - FALLBACK (dev/testing only)
 
+**Where credentials are read:** OpenCode stores `auth.json` at `~/.local/share/opencode/auth.json` on **all platforms, including Windows**. On Windows the plugin additionally checks the legacy `%LOCALAPPDATA%\opencode\auth.json` location as a fallback, trying the XDG path first so a stale legacy or workaround copy can never override current credentials. Every candidate is probed until one yields a valid key.
+
 ### Time Window
 
 Usage statistics are queried for a 24-hour rolling window:
