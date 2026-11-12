@@ -12,13 +12,15 @@
 
 OpenCode plugin to query Z.ai GLM Coding Plan usage statistics with real-time quota monitoring, model usage tracking, and MCP tool usage.
 
+> **Requires OpenCode V2.** Since v2.0.0 the plugin uses the V2 plugin API (`Plugin.define`). V1 plugin implementations do not load in OpenCode V2; for V1 support use plugin version 1.x.
+
 ## Features
 
 - 📊 Query current quota limits (5-hour token cycle, weekly quota, monthly MCP usage)
 - 🤖 View model usage statistics (24-hour rolling window)
 - 🔧 View MCP tool usage (web_search, web_reader, etc.)
 - 🌍 Supports both Global (api.z.ai) and CN (open.bigmodel.cn) platforms
-- 🔐 Automatic credential discovery via OpenCode authentication context
+- 🔐 Automatic credential discovery: OpenCode v2 SQLite store (`opencode.db`) → v1 `auth.json` → environment variables
 - 📈 Visual progress bars for quota percentages rendered in Markdown code spans
 - ⏰ Reset countdown display - Shows when quota resets with local timezone clock time (hours/days + HH:MM)
 - 🏷️ Account plan display - Shows your subscription tier (Lite, Pro, etc.)
@@ -39,7 +41,7 @@ npx opencode-glm-quota install
 **What the installer does:**
 - Copies `/glm_quota` command to `~/.config/opencode/command/glm_quota.md`
 - Copies skill documentation to `~/.config/opencode/skills/glm-quota/SKILL.md`
-- Automatically adds plugin to your OpenCode config
+- Automatically adds plugin to your OpenCode config: writes the `plugins` array (V2) and migrates the legacy V1 `plugin` key
 - Copies agent to `~/.config/opencode/agents/`
 - Supports `--force` flag to overwrite existing files
 
@@ -106,6 +108,11 @@ This plugin uses OpenCode's built-in authentication system. No manual configurat
 # Select: Z.AI Coding Plan or Z.AI
 # Enter your API key
 ```
+
+Keys are stored by OpenCode itself: OpenCode **v2** keeps them in the SQLite
+credential store `~/.local/share/opencode/opencode.db` (table `credential`);
+OpenCode v1 used `~/.local/share/opencode/auth.json`. The plugin reads both
+automatically.
 
 **Fallback (Development/Testing Only):**
 
@@ -214,10 +221,11 @@ The plugin automatically detects the platform based on the provider ID used duri
 
 The plugin discovers credentials in this order:
 
-1. **OpenCode authentication context** (managed by OpenCode) - PRIMARY
-2. **Environment variable** `ZAI_API_KEY` (Global) or `ZHIPU_API_KEY` (CN) - FALLBACK (dev/testing only)
+1. **OpenCode v2 credential store** (SQLite `~/.local/share/opencode/opencode.db`, table `credential`, read-only probe via the `sqlite3` CLI) - PRIMARY. Rows are ordered active-first, then most recently updated, so the current key always wins over stale or inactive copies. `XDG_DATA_HOME` is respected.
+2. **OpenCode v1 authentication file** `auth.json` - LEGACY
+3. **Environment variable** `ZAI_API_KEY` (Global) or `ZHIPU_API_KEY` (CN) - FALLBACK (dev/testing only)
 
-**Where credentials are read:** OpenCode stores `auth.json` at `~/.local/share/opencode/auth.json` on **all platforms, including Windows**. On Windows the plugin additionally checks the legacy `%LOCALAPPDATA%\opencode\auth.json` location as a fallback, trying the XDG path first so a stale legacy or workaround copy can never override current credentials. Every candidate is probed until one yields a valid key.
+**Where credentials are read:** OpenCode v2 stores `auth.json`-era data and new keys in `~/.local/share/opencode/opencode.db` on **all platforms, including Windows**. On Windows the plugin additionally checks the legacy `%LOCALAPPDATA%\opencode\auth.json` location as a fallback, trying the XDG path first so a stale legacy or workaround copy can never override current credentials. Every candidate is probed until one yields a valid key. The SQLite probe requires the `sqlite3` CLI (bundled with macOS; installable on Linux); without it the plugin silently falls through to the next source.
 
 ### Time Window
 

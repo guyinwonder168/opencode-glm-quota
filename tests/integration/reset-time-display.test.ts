@@ -3,15 +3,11 @@ import assert from 'node:assert'
 import { EventEmitter } from 'node:events'
 import type { RequestOptions } from 'node:https'
 import { createRequire, syncBuiltinESMExports } from 'node:module'
-import { GlmQuotaPlugin } from '../../src/index.js'
+import { executeGlmQuota } from '../../src/index.js'
+import { isolateCredentialStore, restoreCredentialStore } from '../helpers/credential-env.js'
 
 const require = createRequire(import.meta.url)
 const https = require('node:https') as typeof import('node:https')
-
-type PluginContext = Parameters<typeof GlmQuotaPlugin>[0]
-type ToolExecutor = {
-  execute: (args?: Record<string, unknown>, context?: Record<string, unknown>) => Promise<string> | string
-}
 
 type MockResponse = {
   statusCode: number
@@ -61,6 +57,7 @@ describe('Reset Time Display Integration', () => {
   beforeEach(() => {
     Date.now = () => fixedNow
     process.env.ZAI_API_KEY = 'test-token'
+    isolateCredentialStore()
   })
 
   afterEach(() => {
@@ -68,6 +65,7 @@ describe('Reset Time Display Integration', () => {
     https.request = originalRequest
     syncBuiltinESMExports()
     delete process.env.ZAI_API_KEY
+    restoreCredentialStore()
   })
 
   test('renders short reset windows as countdown with local time in the Markdown quota table', async () => {
@@ -100,8 +98,7 @@ describe('Reset Time Display Integration', () => {
     }) as typeof https.request
     syncBuiltinESMExports()
 
-    const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
-    const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
+    const result = await executeGlmQuota()
 
     // Should show countdown + local time: "4h 42m (HH:MM)"
     assert.match(result, /\| ⏱️ 5h Token \| 45\.0% \| `█████░░░░░░░` \| 4h 42m \(\d{2}:\d{2}\) \|/)
@@ -137,8 +134,7 @@ describe('Reset Time Display Integration', () => {
     }) as typeof https.request
     syncBuiltinESMExports()
 
-    const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
-    const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
+    const result = await executeGlmQuota()
 
     // Should show countdown + day name + local time: "4d 12h (Day HH:MM)"
     assert.match(result, /\| 📅 Weekly \| 52\.0% \| `██████░░░░░░` \| 4d 12h \([A-Z][a-z]{2} \d{2}:\d{2}\) \|/)
@@ -178,8 +174,7 @@ describe('Reset Time Display Integration', () => {
     }) as typeof https.request
     syncBuiltinESMExports()
 
-    const plugin = await GlmQuotaPlugin({} as unknown as PluginContext)
-    const result = await (plugin.tool!.glm_quota as unknown as ToolExecutor).execute()
+    const result = await executeGlmQuota()
 
     assert.ok(result.includes('| 🔌 MCP (1 Month) | 12.3% | `█░░░░░░░░░░░` | — |'))
   })

@@ -1,4 +1,5 @@
 const TOKEN_LIMIT_TYPE = 'TOKENS_LIMIT';
+const CREDIT_LIMIT_TYPE = 'CREDIT_LIMIT';
 
 export const FIVE_HOUR_TOKEN_LIMIT_LABEL = 'Token usage(5 Hour)';
 export const WEEKLY_TOKEN_LIMIT_LABEL = 'Token usage(Weekly)';
@@ -11,7 +12,7 @@ function asFiniteNumber(value: unknown): number | null {
 }
 
 export function getTokenLimitLabel(limit: { type?: unknown; unit?: unknown; number?: unknown }): string {
-  if (limit.type !== TOKEN_LIMIT_TYPE) {
+  if (limit.type !== TOKEN_LIMIT_TYPE && limit.type !== CREDIT_LIMIT_TYPE) {
     return String(limit.type || 'Unknown');
   }
 
@@ -43,7 +44,7 @@ export function isFiveHourTokenLimit(limit: {
   const number = asFiniteNumber(limit.number);
   const rawType = limit.rawType;
 
-  if (rawType === TOKEN_LIMIT_TYPE && unit === 3 && number === 5) {
+  if ((rawType === TOKEN_LIMIT_TYPE || rawType === CREDIT_LIMIT_TYPE) && unit === 3 && number === 5) {
     return true;
   }
 
