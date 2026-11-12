@@ -218,29 +218,29 @@ function updatePluginConfig() {
     console.log('  ✓ Removed old JSON agent config (migrated to Markdown)')
   }
 
-  // OpenCode config key is "plugin" (singular). Migrate legacy "plugins" entries.
-  const plugin = Array.isArray(existingConfig.plugin) ? [...existingConfig.plugin] : []
-  const legacyPlugins = Array.isArray(existingConfig.plugins) ? existingConfig.plugins : []
+  // OpenCode V2 config key is "plugins" (plural). Migrate legacy V1 "plugin" entries.
+  const plugins = Array.isArray(existingConfig.plugins) ? [...existingConfig.plugins] : []
+  const legacyPlugin = Array.isArray(existingConfig.plugin) ? existingConfig.plugin : []
 
-  if (legacyPlugins.length > 0) {
-    for (const name of legacyPlugins) {
-      if (typeof name === 'string' && !plugin.includes(name)) {
-        plugin.push(name)
+  if (legacyPlugin.length > 0) {
+    for (const name of legacyPlugin) {
+      if (typeof name === 'string' && !plugins.includes(name)) {
+        plugins.push(name)
       }
     }
-    delete existingConfig.plugins
-    console.log('  ✓ Migrated legacy plugins array to plugin')
+    delete existingConfig.plugin
+    console.log('  ✓ Migrated legacy plugin array to plugins')
   }
 
   // Only add if not already present
-  if (!plugin.includes(PLUGIN_NAME)) {
-    plugin.push(PLUGIN_NAME)
-    console.log(`  ✓ Added ${PLUGIN_NAME} to plugin array`)
+  if (!plugins.includes(PLUGIN_NAME)) {
+    plugins.push(PLUGIN_NAME)
+    console.log(`  ✓ Added ${PLUGIN_NAME} to plugins array`)
   } else {
-    console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in plugin array`)
+    console.log(`  ⊙ Plugin ${PLUGIN_NAME} already in plugins array`)
   }
 
-  existingConfig.plugin = plugin
+  existingConfig.plugins = plugins
 
   // Write config back to same file (opencode.json or opencode.jsonc)
   writeConfig(TARGET_CONFIG, existingConfig)

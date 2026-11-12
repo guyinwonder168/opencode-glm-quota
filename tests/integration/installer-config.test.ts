@@ -50,42 +50,42 @@ afterEach(() => {
 })
 
 describe('Installer config key handling', () => {
-  test('fresh install writes plugin key (not plugins)', () => {
+  test('fresh install writes plugins key (not plugin)', () => {
     const tempHome = createTempHome()
 
     runInstaller(tempHome)
     const config = readConfig(tempHome)
 
-    const pluginArray = config.plugin
-    assert.ok(Array.isArray(pluginArray), 'Expected "plugin" to be an array')
-    assert.ok(pluginArray.includes(PLUGIN_NAME), `Expected plugin array to include ${PLUGIN_NAME}`)
+    const pluginsArray = config.plugins
+    assert.ok(Array.isArray(pluginsArray), 'Expected "plugins" to be an array')
+    assert.ok(pluginsArray.includes(PLUGIN_NAME), `Expected plugins array to include ${PLUGIN_NAME}`)
     assert.strictEqual(
-      Object.prototype.hasOwnProperty.call(config, 'plugins'),
+      Object.prototype.hasOwnProperty.call(config, 'plugin'),
       false,
-      'Expected "plugins" key to be absent'
+      'Expected "plugin" key to be absent'
     )
   })
 
-  test('migrates legacy plugins key into plugin key', () => {
+  test('migrates legacy plugin key into plugins key', () => {
     const tempHome = createTempHome()
     const configDir = path.join(tempHome, '.config', 'opencode')
     fs.mkdirSync(configDir, { recursive: true })
     fs.writeFileSync(
       path.join(configDir, 'opencode.json'),
-      JSON.stringify({ plugins: ['existing-plugin'] }, null, 2) + '\n'
+      JSON.stringify({ plugin: ['existing-plugin'] }, null, 2) + '\n'
     )
 
     runInstaller(tempHome)
     const config = readConfig(tempHome)
 
-    const pluginArray = config.plugin
-    assert.ok(Array.isArray(pluginArray), 'Expected "plugin" to be an array')
-    assert.ok(pluginArray.includes('existing-plugin'), 'Expected legacy plugin value to be preserved')
-    assert.ok(pluginArray.includes(PLUGIN_NAME), `Expected plugin array to include ${PLUGIN_NAME}`)
+    const pluginsArray = config.plugins
+    assert.ok(Array.isArray(pluginsArray), 'Expected "plugins" to be an array')
+    assert.ok(pluginsArray.includes('existing-plugin'), 'Expected legacy plugin value to be preserved')
+    assert.ok(pluginsArray.includes(PLUGIN_NAME), `Expected plugins array to include ${PLUGIN_NAME}`)
     assert.strictEqual(
-      Object.prototype.hasOwnProperty.call(config, 'plugins'),
+      Object.prototype.hasOwnProperty.call(config, 'plugin'),
       false,
-      'Expected legacy "plugins" key to be removed'
+      'Expected legacy "plugin" key to be removed'
     )
   })
 })

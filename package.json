@@ -1,6 +1,6 @@
 {
   "name": "opencode-glm-quota",
-  "version": "1.8.1",
+  "version": "2.0.0",
   "type": "module",
   "description": "OpenCode plugin to query Z.ai GLM Coding Plan usage statistics including quota limits, model usage, and MCP tool usage",
   "main": "dist/index.js",
@@ -48,10 +48,8 @@
   },
   "homepage": "https://github.com/guyinwonder168/opencode-glm-quota#readme",
   "dependencies": {
+    "@opencode/plugin": "^2.2.7",
     "jsonc-parser": "^3.2.0"
-  },
-  "peerDependencies": {
-    "@opencode-ai/plugin": ">=0.1.0"
   },
   "overrides": {
     "minimatch": "^9.0.7"
@@ -60,7 +58,6 @@
     "access": "public"
   },
   "devDependencies": {
-    "@opencode-ai/plugin": "^1.1.30",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",

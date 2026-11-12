@@ -40,6 +40,58 @@ describe('token limit labeling', () => {
   });
 });
 
+describe('credit limit labeling (CREDIT_LIMIT)', () => {
+  test('maps 5-hour credit limit using unit and number', () => {
+    const label = getTokenLimitLabel({
+      type: 'CREDIT_LIMIT',
+      unit: 3,
+      number: 5
+    });
+
+    assert.strictEqual(label, FIVE_HOUR_TOKEN_LIMIT_LABEL);
+  });
+
+  test('maps weekly credit limit using unit and number', () => {
+    const label = getTokenLimitLabel({
+      type: 'CREDIT_LIMIT',
+      unit: 6,
+      number: 1
+    });
+
+    assert.strictEqual(label, WEEKLY_TOKEN_LIMIT_LABEL);
+  });
+
+  test('falls back to explicit unit/number label for unknown credit windows', () => {
+    const label = getTokenLimitLabel({
+      type: 'CREDIT_LIMIT',
+      unit: 8,
+      number: 2
+    });
+
+    assert.strictEqual(label, 'Token usage(unit=8, number=2)');
+  });
+
+  test('recognizes 5-hour credit window from raw fields', () => {
+    const isFiveHour = isFiveHourTokenLimit({
+      rawType: 'CREDIT_LIMIT',
+      unit: 3,
+      number: 5
+    });
+
+    assert.strictEqual(isFiveHour, true);
+  });
+
+  test('does not classify weekly credit window as 5-hour', () => {
+    const isFiveHour = isFiveHourTokenLimit({
+      rawType: 'CREDIT_LIMIT',
+      unit: 6,
+      number: 1
+    });
+
+    assert.strictEqual(isFiveHour, false);
+  });
+});
+
 describe('5-hour token limit selection', () => {
   test('recognizes 5-hour token window from raw fields', () => {
     const isFiveHour = isFiveHourTokenLimit({
